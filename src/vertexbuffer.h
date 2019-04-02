@@ -20,7 +20,11 @@ public:
     VertexBuffer(VertexBuffer&& other) noexcept;
     VertexBuffer& operator=(VertexBuffer&& other) noexcept;
 
+    void reserve(GLsizeiptr size, GLenum usage);
     void setData(RawBufferView data, GLenum usage);
+
+    void updateData(RawBufferView data, GLintptr offset = 0);
+
     void use(GLenum target, GLuint index, GLintptr offset, GLsizeiptr size) const;
     void use(GLenum target, GLuint index) const;
 

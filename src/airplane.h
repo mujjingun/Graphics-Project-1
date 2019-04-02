@@ -16,9 +16,6 @@ class Airplane {
 
     std::unique_ptr<AirplaneStates> m_s;
 
-    VertexArray m_vao;
-    VertexBuffer m_vbo;
-
 public:
     Airplane(Scene* scene);
     Airplane(Airplane &&);

@@ -30,9 +30,19 @@ VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
     m_id = std::exchange(other.m_id, 0);
 }
 
+void VertexBuffer::reserve(GLsizeiptr size, GLenum usage)
+{
+    glNamedBufferData(m_id, size, nullptr, usage);
+}
+
 void VertexBuffer::setData(RawBufferView data, GLenum usage)
 {
     glNamedBufferData(m_id, data.size(), data.data(), usage);
+}
+
+void VertexBuffer::updateData(RawBufferView data, GLintptr offset)
+{
+    glNamedBufferSubData(m_id, offset, data.size(), data.data());
 }
 
 void VertexBuffer::use(GLenum target, GLuint index, GLintptr offset, GLsizeiptr size) const

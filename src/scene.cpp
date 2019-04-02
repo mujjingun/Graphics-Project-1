@@ -1,7 +1,10 @@
 #include "scene.h"
 
 #include "airplane.h"
+#include "background.h"
+#include "enemy.h"
 #include "framebuffer.h"
+#include "house.h"
 
 #include <GL/glew.h>
 
@@ -9,8 +12,7 @@
 
 #include <iostream>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace ou {
 
@@ -41,6 +43,26 @@ double Scene::deltaTime() const
 glm::dvec2 Scene::mouseDelta() const
 {
     return m_smoothedMouseDelta;
+}
+
+glm::mat4 Scene::viewProjMat() const
+{
+    glm::mat4 projMat;
+    float realAspectRatio = windowWidth() / float(windowHeight());
+    if (windowWidth() * aspectRatio() > windowHeight()) {
+        projMat = glm::ortho(-aspectRatio() * realAspectRatio,
+            aspectRatio() * realAspectRatio,
+            -aspectRatio(), aspectRatio(), -1000.0f, 1000.0f);
+    } else {
+        projMat = glm::ortho(-1.0f, 1.0f, -1 / realAspectRatio, 1 / realAspectRatio, -1000.0f, 1000.0f);
+    }
+    glm::mat4 viewMat = glm::mat4(1.0f);
+    return projMat * viewMat;
+}
+
+float Scene::aspectRatio() const
+{
+    return 1.6f;
 }
 
 void Scene::mouseClick()
@@ -122,13 +144,24 @@ void Scene::reshapeWindow(int width, int height)
 
 Scene::Scene()
     : m_hdrShader("shaders/hdr.vert.glsl", "shaders/hdr.frag.glsl")
+    , m_background(new Background(this))
     , m_airplane(new Airplane(this))
     , m_lastFrameTime(std::chrono::system_clock::now())
 {
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    m_enemies.push_back(std::make_unique<House>(this));
 }
 
 Scene::~Scene() = default;
+
+void Scene::realRender()
+{
+    m_background->render();
+    for (auto& enemy : m_enemies) {
+        enemy->render();
+    }
+    m_airplane->render();
+}
 
 void Scene::render()
 {
@@ -151,7 +184,7 @@ void Scene::render()
     //glEnable(GL_DEPTH_TEST);
 
     // render stuff
-    m_airplane->render();
+    realRender();
 
     // apply HDR
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);

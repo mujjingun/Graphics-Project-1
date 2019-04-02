@@ -15,7 +15,9 @@
 
 namespace ou {
 
+class Background;
 class Airplane;
+class Enemy;
 
 class Scene {
     FrameBuffer m_hdrFrameBuffer;
@@ -24,7 +26,9 @@ class Scene {
     Shader m_hdrShader;
     VertexArray m_hdrVao;
 
+    std::unique_ptr<Background> m_background;
     std::unique_ptr<Airplane> m_airplane;
+    std::vector<std::unique_ptr<Enemy>> m_enemies;
 
     std::chrono::system_clock::time_point m_lastFrameTime;
     std::chrono::system_clock::duration m_deltaTime;
@@ -51,6 +55,8 @@ class Scene {
 
     void reshapeWindow(int width, int height);
 
+    void realRender();
+
 public:
     Scene();
     ~Scene();
@@ -63,6 +69,9 @@ public:
     double deltaTime() const;
 
     glm::dvec2 mouseDelta() const;
+    glm::mat4 viewProjMat() const;
+
+    float aspectRatio() const;
 
     friend class Callbacks;
 };

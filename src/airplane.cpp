@@ -1,6 +1,8 @@
 #include "airplane.h"
+#include "pointdata.h"
+#include "pointshader.h"
 #include "scene.h"
-#include "shader.h"
+#include "simpleshader.h"
 
 #include <GL/glew.h>
 
@@ -40,26 +42,96 @@ namespace {
     glm::vec2 sidewinder2[5] = { { 20.0, 10.0 }, { 18.0, 3.0 }, { 16.0, 10.0 }, { 18.0, 20.0 }, { 20.0, 20.0 } };
     glm::vec2 center[1] = { { 0.0, 0.0 } };
 
-    Shader& plane_shader()
-    {
-        static Shader shader("shaders/simple.vert.glsl", "shaders/simple.frag.glsl");
-        return shader;
-    }
+    struct PlaneData {
+        VertexBuffer vbo;
+        VertexArray vao;
+
+        static PlaneData* self()
+        {
+            static PlaneData sself;
+            return &sself;
+        }
+
+        void render()
+        {
+            vao.use();
+            SimpleShader::self()->use();
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_BIG_WING]);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_SMALL_WING]);
+            glDrawArrays(GL_TRIANGLE_FAN, 6, 6);
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_BODY]);
+            glDrawArrays(GL_TRIANGLE_FAN, 12, 5);
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_BACK]);
+            glDrawArrays(GL_TRIANGLE_FAN, 17, 5);
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_SIDEWINDER1]);
+            glDrawArrays(GL_TRIANGLE_FAN, 22, 5);
+
+            SimpleShader::self()->setUniform(1, airplane_color[AIRPLANE_SIDEWINDER2]);
+            glDrawArrays(GL_TRIANGLE_FAN, 27, 5);
+        }
+
+    private:
+        PlaneData()
+        {
+            std::vector<glm::vec2> vertices;
+            for (auto const& v : big_wing) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : small_wing) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : body) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : back) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : sidewinder1) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : sidewinder2) {
+                vertices.push_back(v);
+            }
+            for (auto const& v : center) {
+                vertices.push_back(v);
+            }
+            vbo.setData(vertices, GL_STATIC_DRAW);
+
+            auto vertexBinding = vao.getBinding(0);
+            vertexBinding.bindVertexBuffer(vbo, 0, sizeof(glm::vec2));
+
+            auto vertexAttr = vao.enableVertexAttrib(0);
+            vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, 0);
+            vertexAttr.setBinding(vertexBinding);
+        }
+    };
+
+    const int MAX_BULLETS = 200;
 }
 
 struct AirplaneStates {
     double time = 0;
     double lastBullet = 0;
     glm::vec2 pos{ 0, -1 };
+    glm::vec2 dest{ 0, -1 };
 
     std::vector<glm::vec2> bullets;
+
+    PointData bulletBuf{ MAX_BULLETS };
 };
 
 void Airplane::render()
 {
-    double delta = m_scene->deltaTime();
+    const double delta = m_scene->deltaTime();
     m_s->time += delta;
 
+    // shoot bullets
     if (m_s->time > m_s->lastBullet + 0.1) {
         m_s->lastBullet = m_s->time;
         m_s->bullets.push_back(m_s->pos + glm::vec2(0, 0.08));
@@ -67,113 +139,71 @@ void Airplane::render()
     for (auto& p : m_s->bullets) {
         p += glm::vec2(0, delta * 3);
     }
+
     // remove bullets
     m_s->bullets.erase(
         std::remove_if(m_s->bullets.begin(), m_s->bullets.end(),
-            [](glm::vec2 p) {
-                return p.y > 1.0f;
+            [&](glm::vec2 p) {
+                return p.y > m_scene->aspectRatio();
             }),
         m_s->bullets.end());
 
-    double moveSpeed = 2;
+    // move plane
+    glm::vec2 moveDelta = {};
     if (m_scene->isKeyPressed('d')) {
-        m_s->pos.x += delta * moveSpeed;
+        moveDelta.x += 1;
     }
     if (m_scene->isKeyPressed('a')) {
-        m_s->pos.x -= delta * moveSpeed;
+        moveDelta.x -= 1;
     }
     if (m_scene->isKeyPressed('w')) {
-        m_s->pos.y += delta * moveSpeed;
+        moveDelta.y += 1;
     }
     if (m_scene->isKeyPressed('s')) {
-        m_s->pos.y -= delta * moveSpeed;
+        moveDelta.y -= 1;
     }
-    m_s->pos = glm::clamp(m_s->pos, -1.0f, 1.0f);
 
-    double aspectRatio = m_scene->windowHeight() / double(m_scene->windowWidth());
-    glm::mat4 projMat = glm::ortho(-1.0, 1.0, -aspectRatio, aspectRatio, -1000.0, 1000.0);
-    glm::mat4 viewMat = glm::mat4(1.0f);
+    // normalize speed
+    double moveSpeed = 2;
+    if (glm::length(moveDelta) > 0) {
+        moveDelta = glm::normalize(moveDelta) * float(delta * moveSpeed);
+    }
+    m_s->dest = glm::clamp(m_s->dest + moveDelta, -1.0f, 1.0f);
 
-    double scaleFactor = (glm::sin(m_s->time * 20) * 0.2 + 2.0) / 500.0;
+    // apply smoothing
+    double smoothing = 1 - glm::exp(-delta * 15);
+    glm::vec2 smoothedDelta = (m_s->dest - m_s->pos) * float(smoothing);
+    m_s->pos += smoothedDelta;
+
+    // build transformation matrices
+    double scaleFactor = (glm::sin(m_s->time * 20) * 0.1 + 2.0) / 500.0;
     glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(m_s->pos, 0.0f))
         * glm::scale(glm::mat4(1.0), glm::vec3(float(scaleFactor)))
         * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
 
-    float tiltAngle = 45;
-    if (m_scene->isKeyPressed('d')) {
-        modelMat = modelMat * glm::rotate(glm::mat4(1.0), glm::radians(tiltAngle), glm::vec3(0, 1, 0));
-    }
-    if (m_scene->isKeyPressed('a')) {
-        modelMat = modelMat * glm::rotate(glm::mat4(1.0), glm::radians(-tiltAngle), glm::vec3(0, 1, 0));
-    }
+    SimpleShader::self()->setUniform(0, m_scene->viewProjMat() * modelMat);
 
-    m_vao.use();
-    plane_shader().use();
+    // render the plane
+    PlaneData::self()->render();
 
-    plane_shader().setUniform(0, projMat * viewMat * modelMat);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_BIG_WING]);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_SMALL_WING]);
-    glDrawArrays(GL_TRIANGLE_FAN, 6, 6);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_BODY]);
-    glDrawArrays(GL_TRIANGLE_FAN, 12, 5);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_BACK]);
-    glDrawArrays(GL_TRIANGLE_FAN, 17, 5);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_SIDEWINDER1]);
-    glDrawArrays(GL_TRIANGLE_FAN, 22, 5);
-
-    plane_shader().setUniform(1, airplane_color[AIRPLANE_SIDEWINDER2]);
-    glDrawArrays(GL_TRIANGLE_FAN, 27, 5);
-
+    // render bullets
+    std::vector<PointAttrib> bullets;
     for (auto const& p : m_s->bullets) {
-        glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(p, 0.0f));
-
-        plane_shader().setUniform(0, projMat * viewMat * modelMat);
-        plane_shader().setUniform(1, airplane_color[AIRPLANE_CENTER]);
-        glPointSize(5.0);
-        glDrawArrays(GL_POINTS, 32, 1);
+        bullets.push_back(PointAttrib{ p, 5.0f, airplane_color[AIRPLANE_CENTER] * 5.0f });
     }
+    m_s->bulletBuf.vbo.updateData(bullets);
+
+    PointShader::self()->setUniform(0, m_scene->viewProjMat());
+
+    m_s->bulletBuf.vao.use();
+    PointShader::self()->use();
+    glDrawArrays(GL_POINTS, 0, int(bullets.size()));
 }
 
 Airplane::Airplane(Scene* scene)
     : m_scene(scene)
     , m_s(new AirplaneStates{})
 {
-    std::vector<glm::vec2> vertices;
-    for (auto const& v : big_wing) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : small_wing) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : body) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : back) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : sidewinder1) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : sidewinder2) {
-        vertices.push_back(v);
-    }
-    for (auto const& v : center) {
-        vertices.push_back(v);
-    }
-    m_vbo.setData(vertices, GL_STATIC_DRAW);
-
-    auto vertexBinding = m_vao.getBinding(0);
-    vertexBinding.bindVertexBuffer(m_vbo, 0, sizeof(glm::vec2));
-
-    auto vertexAttr = m_vao.enableVertexAttrib(0);
-    vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, 0);
-    vertexAttr.setBinding(vertexBinding);
 }
 
 Airplane::Airplane(Airplane&&) = default;

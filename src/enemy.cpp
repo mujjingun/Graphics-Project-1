@@ -2,7 +2,8 @@
 
 namespace ou {
 
-Enemy::Enemy()
+Enemy::Enemy(glm::vec2 pos)
+    : m_pos(pos)
 {
 }
 }
