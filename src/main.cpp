@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(600, 800);
-    glutCreateWindow("Sogang CSE4170 20171634");
+    glutCreateWindow("Sogang CSE4170 20171634 -- Use WASD keys to control");
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {

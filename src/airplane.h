@@ -4,6 +4,7 @@
 #include "vertexarray.h"
 #include "vertexbuffer.h"
 
+#include <glm/glm.hpp>
 #include <memory>
 
 namespace ou {
@@ -18,11 +19,17 @@ class Airplane {
 
 public:
     Airplane(Scene* scene);
-    Airplane(Airplane &&);
-    Airplane& operator=(Airplane &&);
+    Airplane(Airplane&&);
+    Airplane& operator=(Airplane&&);
     ~Airplane();
 
     void render();
+
+    void takeDamage();
+
+    bool isGameOver();
+
+    glm::vec2 pos() const;
 };
 }
 

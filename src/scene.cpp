@@ -4,32 +4,66 @@
 #include "background.h"
 #include "enemy.h"
 #include "framebuffer.h"
-#include "house.h"
 
 #include <GL/glew.h>
 
 #include <GL/freeglut.h>
 
+#include <algorithm>
 #include <iostream>
+#include <random>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace ou {
 
+struct SceneStates {
+    Shader hdrShader{ "shaders/hdr.vert.glsl", "shaders/hdr.frag.glsl" };
+
+    FrameBuffer hdrFrameBuffer;
+    Texture hdrColorTexture;
+    RenderBuffer hdrDepthRenderBuffer;
+    VertexArray hdrVao;
+
+    std::unique_ptr<Background> background;
+    std::unique_ptr<Airplane> airplane;
+    std::vector<std::unique_ptr<Enemy>> enemies;
+
+    std::chrono::system_clock::time_point lastFrameTime;
+    std::chrono::system_clock::duration deltaTime;
+
+    glm::dvec2 mousePos;
+    glm::dvec2 realMousePos;
+
+    glm::dvec2 lastMousePos;
+    glm::dvec2 smoothedMouseDelta;
+    bool mousePosInvalidated = true;
+    bool captureMouse = false;
+    bool warpPointer = false;
+
+    std::unordered_map<unsigned char, bool> keyStates;
+
+    int windowWidth = -1, windowHeight = -1;
+
+    std::mt19937 gen{ std::random_device{}() };
+    float time = 0;
+    float nextEnemyTime = 0;
+};
+
 int Scene::windowWidth() const
 {
-    return m_windowWidth;
+    return m_s->windowWidth;
 }
 
 int Scene::windowHeight() const
 {
-    return m_windowHeight;
+    return m_s->windowHeight;
 }
 
 bool Scene::isKeyPressed(unsigned char key) const
 {
-    auto it = m_keyStates.find(key);
-    if (it != m_keyStates.end()) {
+    auto it = m_s->keyStates.find(key);
+    if (it != m_s->keyStates.end()) {
         return it->second;
     }
     return false;
@@ -37,12 +71,12 @@ bool Scene::isKeyPressed(unsigned char key) const
 
 double Scene::deltaTime() const
 {
-    return std::chrono::duration<double>(m_deltaTime).count();
+    return std::chrono::duration<double>(m_s->deltaTime).count();
 }
 
 glm::dvec2 Scene::mouseDelta() const
 {
-    return m_smoothedMouseDelta;
+    return m_s->smoothedMouseDelta;
 }
 
 glm::mat4 Scene::viewProjMat() const
@@ -65,122 +99,185 @@ float Scene::aspectRatio() const
     return 1.6f;
 }
 
+std::vector<std::unique_ptr<Enemy>>& Scene::enemies()
+{
+    return m_s->enemies;
+}
+
+std::unique_ptr<Airplane>& Scene::airplane()
+{
+    return m_s->airplane;
+}
+
 void Scene::mouseClick()
 {
-    if (!m_captureMouse) {
-        m_captureMouse = true;
+    if (!m_s->captureMouse) {
+        m_s->captureMouse = true;
         glutSetCursor(GLUT_CURSOR_NONE);
-        m_lastMousePos = { 0, 0 };
-        m_mousePos = { 0, 0 };
-        m_warpPointer = true;
+        m_s->lastMousePos = { 0, 0 };
+        m_s->mousePos = { 0, 0 };
+        m_s->warpPointer = true;
     } else {
-        m_captureMouse = false;
+        m_s->captureMouse = false;
         glutSetCursor(GLUT_CURSOR_INHERIT);
-        m_mousePosInvalidated = true;
+        m_s->mousePosInvalidated = true;
     }
 }
 
 void Scene::mouseMove(int x, int y)
 {
-    if (m_captureMouse) {
-        glm::ivec2 delta(x - m_realMousePos.x, y - m_realMousePos.y);
-        glm::ivec2 center(x - m_windowWidth / 2, y - m_windowHeight / 2);
-        if (std::abs(center.x) > m_windowWidth / 3 || std::abs(center.y) > m_windowHeight / 3) {
-            m_warpPointer = true;
+    if (m_s->captureMouse) {
+        glm::ivec2 delta(x - m_s->realMousePos.x, y - m_s->realMousePos.y);
+        glm::ivec2 center(x - m_s->windowWidth / 2, y - m_s->windowHeight / 2);
+        if (std::abs(center.x) > m_s->windowWidth / 3 || std::abs(center.y) > m_s->windowHeight / 3) {
+            m_s->warpPointer = true;
         }
-        m_mousePos += delta;
+        m_s->mousePos += delta;
     } else {
-        m_mousePos = { x, y };
+        m_s->mousePos = { x, y };
     }
 
-    m_realMousePos = { x, y };
+    m_s->realMousePos = { x, y };
 }
 
 void Scene::mouseEnter()
 {
-    m_mousePosInvalidated = true;
+    m_s->mousePosInvalidated = true;
 }
 
 void Scene::keyDown(unsigned char key)
 {
-    m_keyStates[key] = true;
+    m_s->keyStates[key] = true;
 }
 
 void Scene::keyUp(unsigned char key)
 {
-    m_keyStates[key] = false;
+    m_s->keyStates[key] = false;
 }
 
 void Scene::reshapeWindow(int width, int height)
 {
-    if (width == m_windowWidth && height == m_windowHeight) {
+    if (width == m_s->windowWidth && height == m_s->windowHeight) {
         return;
     }
 
-    m_windowWidth = width;
-    m_windowHeight = height;
+    m_s->windowWidth = width;
+    m_s->windowHeight = height;
 
     // Resize viewport
     glViewport(0, 0, width, height);
 
     // Build framebuffer
-    m_hdrFrameBuffer = FrameBuffer();
+    m_s->hdrFrameBuffer = FrameBuffer();
 
-    m_hdrColorTexture = Texture(GL_TEXTURE_2D);
-    m_hdrColorTexture.setMinFilter(GL_NEAREST);
-    m_hdrColorTexture.setMagFilter(GL_NEAREST);
-    m_hdrColorTexture.allocateStorage2D(1, GL_RGBA16F, width, height);
-    m_hdrFrameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, m_hdrColorTexture);
+    m_s->hdrColorTexture = Texture(GL_TEXTURE_2D);
+    m_s->hdrColorTexture.setMinFilter(GL_NEAREST);
+    m_s->hdrColorTexture.setMagFilter(GL_NEAREST);
+    m_s->hdrColorTexture.allocateStorage2D(1, GL_RGBA16F, width, height);
+    m_s->hdrFrameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, m_s->hdrColorTexture);
 
-    m_hdrDepthRenderBuffer = RenderBuffer();
-    m_hdrDepthRenderBuffer.allocateStorage(GL_DEPTH24_STENCIL8, width, height);
-    m_hdrFrameBuffer.bindRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, m_hdrDepthRenderBuffer);
+    m_s->hdrDepthRenderBuffer = RenderBuffer();
+    m_s->hdrDepthRenderBuffer.allocateStorage(GL_DEPTH24_STENCIL8, width, height);
+    m_s->hdrFrameBuffer.bindRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, m_s->hdrDepthRenderBuffer);
 
-    if (!m_hdrFrameBuffer.isComplete()) {
+    if (!m_s->hdrFrameBuffer.isComplete()) {
         std::cerr << "Error building framebuffer\n";
         throw std::runtime_error("Framebuffer is not complete");
     }
 }
 
 Scene::Scene()
-    : m_hdrShader("shaders/hdr.vert.glsl", "shaders/hdr.frag.glsl")
-    , m_background(new Background(this))
-    , m_airplane(new Airplane(this))
-    , m_lastFrameTime(std::chrono::system_clock::now())
+    : m_s(new SceneStates{})
 {
+    m_s->background.reset(new Background(this));
+    m_s->airplane.reset(new Airplane(this));
+    m_s->lastFrameTime = std::chrono::system_clock::now();
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    m_enemies.push_back(std::make_unique<House>(this));
 }
 
+Scene::Scene(Scene&&) = default;
+Scene& Scene::operator=(Scene&&) = default;
 Scene::~Scene() = default;
 
 void Scene::realRender()
 {
-    m_background->render();
-    for (auto& enemy : m_enemies) {
+    m_s->time += deltaTime();
+
+    for (auto& enemy : m_s->enemies) {
+        if (enemy->isSuccess()) {
+            m_s->airplane->takeDamage();
+        }
+    }
+
+    m_s->enemies.erase(
+        std::remove_if(m_s->enemies.begin(), m_s->enemies.end(),
+            [&](std::unique_ptr<Enemy>& enemy) {
+                return enemy->doRemove();
+            }),
+        m_s->enemies.end());
+
+    std::uniform_real_distribution<> posDist(-1, 1);
+    std::discrete_distribution<> typeDist({ 2, 1, 3 });
+    std::discrete_distribution<> cntDist({ 1, 3, 4, 3, 2, 1 });
+    Enemy::Type types[] = {
+        Enemy::Type::CAR,
+        Enemy::Type::HOUSE,
+        Enemy::Type::COCKTAIL,
+    };
+    if (m_s->time > m_s->nextEnemyTime) {
+
+        // make a new row of enemies
+        int cnt = cntDist(m_s->gen);
+        Enemy::Type type = types[typeDist(m_s->gen)];
+
+        for (int i = 0; i < cnt; ++i) {
+            float x;
+            if (cnt == 1) {
+                x = 0;
+            }
+            else {
+                x = 2.f / (cnt - 1) * (float(posDist(m_s->gen)) * 0.2f + 1.f) * i - 1.f;
+            }
+            x += float(posDist(m_s->gen)) * 0.1f;
+            x = glm::clamp(x, -1.f, 1.f);
+            std::cout << x << ", ";
+            m_s->enemies.push_back(std::make_unique<Enemy>(this, type, x));
+        }
+        std::cout << std::endl;
+
+        m_s->nextEnemyTime += 2;
+    }
+
+    m_s->background->render();
+    for (auto& enemy : m_s->enemies) {
         enemy->render();
     }
-    m_airplane->render();
+    m_s->airplane->render();
+
+    if (m_s->airplane->isGameOver()) {
+        m_s->airplane.reset(new Airplane(this));
+        m_s->enemies.clear();
+    }
 }
 
 void Scene::render()
 {
     // Update time stuff
     auto now = std::chrono::system_clock::now();
-    m_deltaTime = now - m_lastFrameTime;
-    m_lastFrameTime = now;
+    m_s->deltaTime = now - m_s->lastFrameTime;
+    m_s->lastFrameTime = now;
 
     // Clear screen & framebuffer
     float clearColor[] = { 0, 0, 0, 0 };
     FrameBuffer::defaultBuffer().clear(GL_COLOR, 0, clearColor);
-    m_hdrFrameBuffer.clear(GL_COLOR, 0, clearColor);
+    m_s->hdrFrameBuffer.clear(GL_COLOR, 0, clearColor);
 
     float clearDepth[] = { 1 };
     FrameBuffer::defaultBuffer().clear(GL_DEPTH, 0, clearDepth);
-    m_hdrFrameBuffer.clear(GL_DEPTH, 0, clearDepth);
+    m_s->hdrFrameBuffer.clear(GL_DEPTH, 0, clearDepth);
 
     // Render stuff to framebuffer
-    m_hdrFrameBuffer.use(GL_FRAMEBUFFER);
+    m_s->hdrFrameBuffer.use(GL_FRAMEBUFFER);
     //glEnable(GL_DEPTH_TEST);
 
     // render stuff
@@ -190,28 +287,28 @@ void Scene::render()
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);
     //glDisable(GL_DEPTH_TEST);
 
-    m_hdrVao.use();
-    m_hdrShader.use();
-    m_hdrColorTexture.use(0);
+    m_s->hdrVao.use();
+    m_s->hdrShader.use();
+    m_s->hdrColorTexture.use(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     // Update mouse cursor stuff
-    if (m_mousePosInvalidated) {
-        m_lastMousePos = m_mousePos;
-        m_smoothedMouseDelta = { 0, 0 };
-        m_mousePosInvalidated = false;
+    if (m_s->mousePosInvalidated) {
+        m_s->lastMousePos = m_s->mousePos;
+        m_s->smoothedMouseDelta = { 0, 0 };
+        m_s->mousePosInvalidated = false;
     } else {
-        glm::dvec2 mouseDelta = m_mousePos - m_lastMousePos;
+        glm::dvec2 mouseDelta = m_s->mousePos - m_s->lastMousePos;
 
         double smoothing = 1 - glm::exp(-deltaTime() * 15);
-        m_smoothedMouseDelta = mouseDelta * smoothing;
-        m_lastMousePos += m_smoothedMouseDelta;
+        m_s->smoothedMouseDelta = mouseDelta * smoothing;
+        m_s->lastMousePos += m_s->smoothedMouseDelta;
     }
 
-    if (m_captureMouse && m_warpPointer) {
-        glutWarpPointer(m_windowWidth / 2, m_windowHeight / 2);
-        m_realMousePos = { m_windowWidth / 2, m_windowHeight / 2 };
-        m_warpPointer = false;
+    if (m_s->captureMouse && m_s->warpPointer) {
+        glutWarpPointer(m_s->windowWidth / 2, m_s->windowHeight / 2);
+        m_s->realMousePos = { m_s->windowWidth / 2, m_s->windowHeight / 2 };
+        m_s->warpPointer = false;
     }
 }
 }

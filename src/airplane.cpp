@@ -1,4 +1,6 @@
 #include "airplane.h"
+#include "enemy.h"
+#include "hpbar.h"
 #include "pointdata.h"
 #include "pointshader.h"
 #include "scene.h"
@@ -13,6 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <list>
+#include <random>
 
 namespace ou {
 
@@ -115,15 +118,32 @@ namespace {
     const int MAX_BULLETS = 200;
 }
 
+struct Shrapnel {
+    glm::vec2 pos;
+    glm::vec2 vel;
+    float rotation;
+    float rotationSpeed;
+    float scale;
+};
+
 struct AirplaneStates {
-    double time = 0;
-    double lastBullet = 0;
+    float time = 0;
+    float lastBullet = 0;
     glm::vec2 pos{ 0, -1 };
     glm::vec2 dest{ 0, -1 };
 
+    int health = 100;
+    int maxHealth = 100;
     std::vector<glm::vec2> bullets;
 
     PointData bulletBuf{ MAX_BULLETS };
+    HpBar hpbar;
+
+    bool isExploding;
+    std::list<Shrapnel> shrapnels;
+    float explodeTime;
+
+    std::mt19937 gen{ std::random_device{}() };
 };
 
 void Airplane::render()
@@ -132,10 +152,13 @@ void Airplane::render()
     m_s->time += delta;
 
     // shoot bullets
-    if (m_s->time > m_s->lastBullet + 0.1) {
-        m_s->lastBullet = m_s->time;
-        m_s->bullets.push_back(m_s->pos + glm::vec2(0, 0.08));
+    if (!m_s->isExploding) {
+        if (m_s->time > m_s->lastBullet + 0.1f) {
+            m_s->lastBullet = m_s->time;
+            m_s->bullets.push_back(m_s->pos + glm::vec2(0, 0.08));
+        }
     }
+
     for (auto& p : m_s->bullets) {
         p += glm::vec2(0, delta * 3);
     }
@@ -144,7 +167,15 @@ void Airplane::render()
     m_s->bullets.erase(
         std::remove_if(m_s->bullets.begin(), m_s->bullets.end(),
             [&](glm::vec2 p) {
-                return p.y > m_scene->aspectRatio();
+                bool leftScreen = (p.y > m_scene->aspectRatio());
+                bool isCollide = false;
+                for (const auto& enemy : m_scene->enemies()) {
+                    if (enemy->collide(p + glm::vec2(0, -1), p)) {
+                        isCollide = true;
+                        break;
+                    }
+                }
+                return leftScreen || isCollide;
             }),
         m_s->bullets.end());
 
@@ -168,7 +199,8 @@ void Airplane::render()
     if (glm::length(moveDelta) > 0) {
         moveDelta = glm::normalize(moveDelta) * float(delta * moveSpeed);
     }
-    m_s->dest = glm::clamp(m_s->dest + moveDelta, -1.0f, 1.0f);
+    m_s->dest = glm::clamp(m_s->dest + moveDelta,
+        glm::vec2(-1.0f, -m_scene->aspectRatio()), glm::vec2(1.0f, m_scene->aspectRatio()));
 
     // apply smoothing
     double smoothing = 1 - glm::exp(-delta * 15);
@@ -176,15 +208,39 @@ void Airplane::render()
     m_s->pos += smoothedDelta;
 
     // build transformation matrices
-    double scaleFactor = (glm::sin(m_s->time * 20) * 0.1 + 2.0) / 500.0;
-    glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(m_s->pos, 0.0f))
-        * glm::scale(glm::mat4(1.0), glm::vec3(float(scaleFactor)))
+    float scaleFactor = (glm::sin(m_s->time * 20) * 0.1f + 2.0f) / 500.0f;
+    glm::vec2 pos = m_s->pos;
+    float offset = m_s->time < 1 ? 1.0f - float(m_s->time) : 0.0f;
+    pos -= glm::vec2(0.0f, glm::pow(offset, 2.0f) * 2.0f);
+    glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
+        * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
         * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
 
-    SimpleShader::self()->setUniform(0, m_scene->viewProjMat() * modelMat);
+    if (!m_s->isExploding) {
+        // render health bar
+        glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(m_s->pos + glm::vec2(0, -0.15f), 0.0f))
+            * glm::scale(glm::mat4(1.0), glm::vec3(0.1f, 0.01f, 0.0f));
+        m_s->hpbar.render(m_scene->viewProjMat() * hpBarModelMat, float(m_s->health) / m_s->maxHealth);
 
-    // render the plane
-    PlaneData::self()->render();
+        // render the plane
+        SimpleShader::self()->setUniform(0, m_scene->viewProjMat() * modelMat);
+        PlaneData::self()->render();
+    } else {
+        for (auto& bit : m_s->shrapnels) {
+            bit.pos += bit.vel * float(delta);
+            bit.rotation += bit.rotationSpeed * float(delta);
+        }
+
+        for (auto const& bit : m_s->shrapnels) {
+            glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(bit.pos, 0.0f))
+                * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor * bit.scale))
+                * glm::rotate(glm::mat4(1.0), glm::radians(bit.rotation), glm::vec3(0, 0, 1));
+
+            SimpleShader::self()->setUniform(0, m_scene->viewProjMat() * modelMat);
+
+            PlaneData::self()->render();
+        }
+    }
 
     // render bullets
     std::vector<PointAttrib> bullets;
@@ -198,6 +254,43 @@ void Airplane::render()
     m_s->bulletBuf.vao.use();
     PointShader::self()->use();
     glDrawArrays(GL_POINTS, 0, int(bullets.size()));
+}
+
+void Airplane::takeDamage()
+{
+    if (m_s->isExploding) {
+        return;
+    }
+
+    m_s->health -= 2;
+
+    if (m_s->health <= 0) {
+        m_s->isExploding = true;
+        m_s->explodeTime = m_s->time;
+
+        std::normal_distribution<> normalDist;
+        for (int i = 0; i < 30; ++i) {
+            std::uniform_real_distribution<> angleDist(0, 360);
+            Shrapnel bit;
+            bit.pos = m_s->pos + glm::vec2(normalDist(m_s->gen), normalDist(m_s->gen)) * 0.1f;
+            double angle = angleDist(m_s->gen);
+            bit.vel = glm::vec2(glm::cos(angle), glm::sin(angle)) * float(3 + normalDist(m_s->gen));
+            bit.rotation = float(angle);
+            bit.rotationSpeed = float(normalDist(m_s->gen) * 360);
+            bit.scale = float(normalDist(m_s->gen) * 0.05 + 0.3);
+            m_s->shrapnels.push_back(bit);
+        }
+    }
+}
+
+bool Airplane::isGameOver()
+{
+    return m_s->isExploding && m_s->time > m_s->explodeTime + 2;
+}
+
+glm::vec2 Airplane::pos() const
+{
+    return m_s->pos;
 }
 
 Airplane::Airplane(Scene* scene)

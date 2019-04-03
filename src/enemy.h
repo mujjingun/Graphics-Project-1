@@ -1,20 +1,37 @@
-#ifndef ENEMY_H
-#define ENEMY_H
+#ifndef HOUSE_H
+#define HOUSE_H
 
 #include <glm/glm.hpp>
+#include <memory>
 
 namespace ou {
 
+class Scene;
+struct HouseStates;
+
 class Enemy {
-protected:
-    glm::vec2 m_pos;
+
+    Scene* m_scene;
+
+    std::unique_ptr<HouseStates> m_s;
 
 public:
-    Enemy(glm::vec2 pos);
-    virtual ~Enemy() = default;
+    enum class Type {
+        HOUSE,
+        CAR,
+        COCKTAIL,
+    };
 
-    virtual void render() = 0;
+    Enemy(Scene* scene, Type type, float x);
+    ~Enemy();
+    Enemy(Enemy&&);
+    Enemy& operator=(Enemy&&);
+
+    void render();
+    bool collide(glm::vec2 a, glm::vec2 b);
+    bool doRemove();
+    bool isSuccess();
 };
 }
 
-#endif // ENEMY_H
+#endif // HOUSE_H

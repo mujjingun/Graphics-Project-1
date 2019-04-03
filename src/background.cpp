@@ -1,4 +1,5 @@
 #include "background.h"
+#include "airplane.h"
 #include "pointdata.h"
 #include "pointshader.h"
 #include "scene.h"
@@ -30,8 +31,7 @@ struct BackgroundStates {
     double time = 0;
     double nextStarTime = -20;
 
-    std::random_device dev{};
-    std::mt19937 gen{ dev() };
+    std::mt19937 gen{ std::random_device{}() };
 };
 
 Background::Background(Scene* scene)
@@ -45,9 +45,9 @@ void Background::render()
     double delta = m_scene->deltaTime();
     m_s->time += delta;
 
-    // 10 occurances every second
+    // number of occurances every second
     std::exponential_distribution<> timeDist(20);
-    std::uniform_real_distribution<> xDist(-1, 1);
+    std::uniform_real_distribution<> xDist(-1.5, 1.5);
     std::discrete_distribution<> distanceDist({ 5, 4, 3, 2, 1 });
 
     glm::vec3 colors[] = {
@@ -90,7 +90,12 @@ void Background::render()
 
     std::vector<PointAttrib> attribs;
     for (auto const& star : m_s->stars) {
-        attribs.push_back(PointAttrib{ star.pos, float(star.size), star.color });
+        PointAttrib attrib;
+        attrib.pos = star.pos;
+        attrib.pos -= m_scene->airplane()->pos() * float(star.size) * 0.1f;
+        attrib.color = star.color;
+        attrib.size = star.size;
+        attribs.push_back(attrib);
     }
     m_s->buf.vbo.updateData(attribs);
 
