@@ -36,8 +36,6 @@ public:
 
     void use(GLuint unit) const;
     void useAsImage(GLuint unit, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format);
-
-    void saveToImage(GLenum format, GLenum type, GLsizei width, GLsizei height, GLsizei depth, const char* filename) const;
 };
 }
 

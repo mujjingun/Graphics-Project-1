@@ -20,9 +20,11 @@ public:
         HOUSE,
         CAR,
         COCKTAIL,
+        SQUID,
+        BALOON
     };
 
-    Enemy(Scene* scene, Type type, float x);
+    Enemy(Scene* scene, Type type, float x, float fastness);
     ~Enemy();
     Enemy(Enemy&&);
     Enemy& operator=(Enemy&&);

@@ -1,9 +1,15 @@
 #include "scene.h"
 
 #include "airplane.h"
-#include "background.h"
+#include "backgroundsystem.h"
+#include "components.h"
+#include "ecsengine.h"
 #include "enemy.h"
+#include "enemysystem.h"
 #include "framebuffer.h"
+#include "hpbar.h"
+#include "physicssystem.h"
+#include "rendersystem.h"
 
 #include <GL/glew.h>
 
@@ -25,7 +31,6 @@ struct SceneStates {
     RenderBuffer hdrDepthRenderBuffer;
     VertexArray hdrVao;
 
-    std::unique_ptr<Background> background;
     std::unique_ptr<Airplane> airplane;
     std::vector<std::unique_ptr<Enemy>> enemies;
 
@@ -48,6 +53,11 @@ struct SceneStates {
     std::mt19937 gen{ std::random_device{}() };
     float time = 0;
     float nextEnemyTime = 0;
+    float damageTime = -10;
+
+    HpBar hpbar;
+
+    ECSEngine engine{};
 };
 
 int Scene::windowWidth() const
@@ -90,7 +100,16 @@ glm::mat4 Scene::viewProjMat() const
     } else {
         projMat = glm::ortho(-1.0f, 1.0f, -1 / realAspectRatio, 1 / realAspectRatio, -1000.0f, 1000.0f);
     }
+
     glm::mat4 viewMat = glm::mat4(1.0f);
+
+    if (m_s->damageTime + 0.3f > m_s->time) {
+        float mag = m_s->damageTime + 0.3f - m_s->time;
+        float t = m_s->time - m_s->damageTime;
+        float y = mag * glm::sin(t * 80) * 0.1f;
+        viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(y, y, 0));
+    }
+
     return projMat * viewMat;
 }
 
@@ -189,9 +208,38 @@ void Scene::reshapeWindow(int width, int height)
 Scene::Scene()
     : m_s(new SceneStates{})
 {
-    m_s->background.reset(new Background(this));
+    m_s->engine.addSystem(std::make_unique<BackgroundSystem>());
+    m_s->engine.addSystem(std::make_unique<RenderSystem>());
+    m_s->engine.addSystem(std::make_unique<PhysicsSystem>());
+    m_s->engine.addSystem(std::make_unique<EnemySystem>());
+
+    glm::mat4 projMat;
+    float realAspectRatio = windowWidth() / float(windowHeight());
+    if (windowWidth() * aspectRatio() > windowHeight()) {
+        projMat = glm::ortho(-aspectRatio() * realAspectRatio,
+            aspectRatio() * realAspectRatio,
+            -aspectRatio(), aspectRatio(), -1000.0f, 1000.0f);
+    } else {
+        projMat = glm::ortho(-1.0f, 1.0f, -1 / realAspectRatio, 1 / realAspectRatio, -1000.0f, 1000.0f);
+    }
+
+    SceneComponent scene;
+    scene.aspectRatio = 1.6f;
+    scene.viewProjMat = projMat;
+    m_s->engine.addEntity(Entity({ scene }));
+
+    PlayerComponent player;
+    PosComponent playerPos{ { 0, -1 } };
+    m_s->engine.addEntity(Entity({ player, playerPos }));
+
+    InputComponent input;
+    m_s->engine.addEntity(Entity({ input }));
+
+    // TODO: get rid of this
     m_s->airplane.reset(new Airplane(this));
+
     m_s->lastFrameTime = std::chrono::system_clock::now();
+
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 }
 
@@ -201,11 +249,16 @@ Scene::~Scene() = default;
 
 void Scene::realRender()
 {
+    m_s->engine.update(float(deltaTime()));
+
     m_s->time += deltaTime();
 
     for (auto& enemy : m_s->enemies) {
         if (enemy->isSuccess()) {
             m_s->airplane->takeDamage();
+            if (!m_s->airplane->isGameOver()) {
+                m_s->damageTime = m_s->time;
+            }
         }
     }
 
@@ -217,12 +270,14 @@ void Scene::realRender()
         m_s->enemies.end());
 
     std::uniform_real_distribution<> posDist(-1, 1);
-    std::discrete_distribution<> typeDist({ 2, 1, 3 });
+    std::discrete_distribution<> typeDist({ 2, 1, 2, 1, 2 });
     std::discrete_distribution<> cntDist({ 1, 3, 4, 3, 2, 1 });
     Enemy::Type types[] = {
         Enemy::Type::CAR,
         Enemy::Type::HOUSE,
         Enemy::Type::COCKTAIL,
+        Enemy::Type::SQUID,
+        Enemy::Type::BALOON,
     };
     if (m_s->time > m_s->nextEnemyTime) {
 
@@ -230,31 +285,48 @@ void Scene::realRender()
         int cnt = cntDist(m_s->gen);
         Enemy::Type type = types[typeDist(m_s->gen)];
 
+        if (type == Enemy::Type::SQUID) {
+            cnt = 1;
+            m_s->nextEnemyTime += 2;
+        }
+
         for (int i = 0; i < cnt; ++i) {
             float x;
             if (cnt == 1) {
-                x = 0;
-            }
-            else {
+                x = float(posDist(m_s->gen)) * 0.5f;
+            } else {
                 x = 2.f / (cnt - 1) * (float(posDist(m_s->gen)) * 0.2f + 1.f) * i - 1.f;
             }
             x += float(posDist(m_s->gen)) * 0.1f;
             x = glm::clamp(x, -1.f, 1.f);
-            std::cout << x << ", ";
-            m_s->enemies.push_back(std::make_unique<Enemy>(this, type, x));
+            float fastness = m_s->time * 0.01f;
+            m_s->enemies.push_back(std::make_unique<Enemy>(this, type, x, fastness));
         }
-        std::cout << std::endl;
 
         m_s->nextEnemyTime += 2;
     }
 
-    m_s->background->render();
+    //m_s->background->render();
     for (auto& enemy : m_s->enemies) {
         enemy->render();
     }
     m_s->airplane->render();
 
+    // render health bar
+    glm::mat4 hpBarProjMat = glm::ortho(-1.0f, 1.0f, -aspectRatio(), aspectRatio(), -1000.0f, 1000.0f);
+
+    float hpBarScale = 0.02f;
+    if (m_s->damageTime + 0.3f > m_s->time) {
+        hpBarScale += 0.3f * (m_s->damageTime + 0.3f - m_s->time);
+    }
+    glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, -aspectRatio(), 0.0f))
+        * glm::scale(glm::mat4(1.0), glm::vec3(1.f, hpBarScale, 0.0f));
+    m_s->hpbar.render(hpBarProjMat * hpBarModelMat, m_s->airplane->healthRatio());
+
     if (m_s->airplane->isGameOver()) {
+        m_s->time = 0;
+        m_s->damageTime = -10;
+        m_s->nextEnemyTime = 0;
         m_s->airplane.reset(new Airplane(this));
         m_s->enemies.clear();
     }

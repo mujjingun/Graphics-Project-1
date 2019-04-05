@@ -15,7 +15,6 @@
 
 namespace ou {
 
-class Background;
 class Airplane;
 class Enemy;
 

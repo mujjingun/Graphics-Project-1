@@ -27,6 +27,8 @@ public:
 
     void takeDamage();
 
+    float healthRatio() const;
+
     bool isGameOver();
 
     glm::vec2 pos() const;

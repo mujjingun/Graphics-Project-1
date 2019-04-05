@@ -137,7 +137,6 @@ struct AirplaneStates {
     std::vector<glm::vec2> bullets;
 
     PointData bulletBuf{ MAX_BULLETS };
-    HpBar hpbar;
 
     bool isExploding;
     std::list<Shrapnel> shrapnels;
@@ -152,8 +151,8 @@ void Airplane::render()
     m_s->time += delta;
 
     // shoot bullets
-    if (!m_s->isExploding) {
-        if (m_s->time > m_s->lastBullet + 0.1f) {
+    if (m_s->time >= 1 && !m_s->isExploding) {
+        if (m_s->time > m_s->lastBullet + 0.05f) {
             m_s->lastBullet = m_s->time;
             m_s->bullets.push_back(m_s->pos + glm::vec2(0, 0.08));
         }
@@ -217,11 +216,6 @@ void Airplane::render()
         * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
 
     if (!m_s->isExploding) {
-        // render health bar
-        glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(m_s->pos + glm::vec2(0, -0.15f), 0.0f))
-            * glm::scale(glm::mat4(1.0), glm::vec3(0.1f, 0.01f, 0.0f));
-        m_s->hpbar.render(m_scene->viewProjMat() * hpBarModelMat, float(m_s->health) / m_s->maxHealth);
-
         // render the plane
         SimpleShader::self()->setUniform(0, m_scene->viewProjMat() * modelMat);
         PlaneData::self()->render();
@@ -262,7 +256,7 @@ void Airplane::takeDamage()
         return;
     }
 
-    m_s->health -= 2;
+    m_s->health -= 5;
 
     if (m_s->health <= 0) {
         m_s->isExploding = true;
@@ -281,6 +275,11 @@ void Airplane::takeDamage()
             m_s->shrapnels.push_back(bit);
         }
     }
+}
+
+float Airplane::healthRatio() const
+{
+    return float(m_s->health) / m_s->maxHealth;
 }
 
 bool Airplane::isGameOver()
