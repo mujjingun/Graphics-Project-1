@@ -16,24 +16,42 @@ add_executable(${PROJECT_NAME}
     src/texture.cpp
     src/renderbuffer.cpp
     src/terrain.cpp
-    src/airplane.cpp
-    src/enemy.cpp
-    src/house.cpp
-    src/background.cpp
+    src/playersystem.cpp
+    src/components.cpp
     src/simpleshader.cpp
     src/pointshader.cpp
     src/pointdata.cpp
+    src/hpbar.cpp
+    src/hpbarshader.cpp
+    src/entity.cpp
+    src/ecsengine.cpp
+    src/backgroundsystem.cpp
+    src/rendersystem.cpp
+    src/physicssystem.cpp
+    src/enemysystem.cpp
+    src/scenesystem.cpp
+    src/projectilesystem.cpp
+    src/shrapnelsystem.cpp
 )
 target_link_libraries(${PROJECT_NAME} GLEW::GLEW ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLM_LIBRARIES})
-include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_ENABLE_EXPERIMENTAL)
 
 # Copy shaders
-configure_file(shaders/simple.vert.glsl shaders/simple.vert.glsl COPYONLY)
-configure_file(shaders/simple.frag.glsl shaders/simple.frag.glsl COPYONLY)
-configure_file(shaders/star.vert.glsl shaders/star.vert.glsl COPYONLY)
-configure_file(shaders/star.frag.glsl shaders/star.frag.glsl COPYONLY)
-configure_file(shaders/hdr.vert.glsl shaders/hdr.vert.glsl COPYONLY)
-configure_file(shaders/hdr.frag.glsl shaders/hdr.frag.glsl COPYONLY)
+set(SHADER_FILES
+    shaders/simple.vert.glsl
+    shaders/simple.frag.glsl
+    shaders/star.vert.glsl
+    shaders/star.frag.glsl
+    shaders/hdr.vert.glsl
+    shaders/hdr.frag.glsl
+    shaders/hpbar.vert.glsl
+    shaders/hpbar.frag.glsl
+)
+
+foreach(SHADER_FILE ${SHADER_FILES})
+    configure_file(${SHADER_FILE} ${SHADER_FILE} COPYONLY)
+endforeach()
 
 # Testing
 #enable_testing()
