@@ -29,6 +29,11 @@ namespace {
         { 100 / 255.0f, 255 / 255.0f, 255 / 255.0f } // center
     };
 
+    struct Attribute {
+        glm::vec2 pos;
+        glm::vec3 color;
+    };
+
     glm::vec2 big_wing[6] = { { 0.0, 0.0 }, { -20.0, 15.0 }, { -20.0, 20.0 }, { 0.0, 23.0 }, { 20.0, 20.0 }, { 20.0, 15.0 } };
     glm::vec2 small_wing[6] = { { 0.0, -18.0 }, { -11.0, -12.0 }, { -12.0, -7.0 }, { 0.0, -10.0 }, { 12.0, -7.0 }, { 11.0, -12.0 } };
     glm::vec2 body[5] = { { 0.0, -25.0 }, { -6.0, 0.0 }, { -6.0, 22.0 }, { 6.0, 22.0 }, { 6.0, 0.0 } };
@@ -623,10 +628,12 @@ namespace {
             vertexAttr.setBinding(vertexBinding);
         }
     };
+
+    const int max_particles = 500;
 }
 
 RenderSystem::RenderSystem()
-    : m_pointsBuf(500)
+    : m_pointsBuf(max_particles)
 {
 }
 
@@ -659,17 +666,6 @@ void RenderSystem::update(ECSEngine& engine, float)
 
     // render background stars and projectiles
     std::vector<PointAttrib> attribs;
-    for (Entity& ent : engine.iterate<StarComponent>()) {
-        StarComponent star = ent.get<StarComponent>();
-        PosComponent pos = ent.get<PosComponent>();
-
-        PointAttrib attrib;
-        attrib.pos = pos.pos;
-        attrib.pos -= player.get<PosComponent>().pos * float(star.size) * 0.1f;
-        attrib.color = star.color;
-        attrib.size = star.size;
-        attribs.push_back(attrib);
-    }
 
     // projectiles
     for (Entity& proj : engine.iterate<ProjectileComponent>()) {
@@ -679,7 +675,26 @@ void RenderSystem::update(ECSEngine& engine, float)
         attrib.pos = pos.pos;
         attrib.color = { 5, 5, 5 };
         attrib.size = 5;
-        attribs.push_back(attrib);
+
+        if (attribs.size() < max_particles) {
+            attribs.push_back(attrib);
+        }
+    }
+
+    // background stars
+    for (Entity& ent : engine.iterate<StarComponent>()) {
+        StarComponent star = ent.get<StarComponent>();
+        PosComponent pos = ent.get<PosComponent>();
+
+        PointAttrib attrib;
+        attrib.pos = pos.pos;
+        attrib.pos -= player.get<PosComponent>().pos * float(star.size) * 0.1f;
+        attrib.color = star.color;
+        attrib.size = star.size;
+
+        if (attribs.size() < max_particles) {
+            attribs.push_back(attrib);
+        }
     }
 
     m_pointsBuf.vbo.updateData(attribs);

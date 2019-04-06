@@ -192,6 +192,7 @@ Scene::Scene()
     : m_s(new SceneStates{})
 {
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    glEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
 
     m_s->engine.addSystem(std::make_unique<SceneSystem>());
     m_s->engine.addSystem(std::make_unique<BackgroundSystem>());
@@ -214,13 +215,16 @@ Scene::Scene()
     player.timeSinceBullet = -1;
     player.timeSinceHit = 10;
 
+    CollidableComponent playerCollision;
+    playerCollision.radius = 0.1f;
+
     PosComponent playerPos;
     playerPos.pos = { 0, -scene.aspectRatio };
 
     HealthComponent playerHealth;
     playerHealth.health = 100;
     playerHealth.maxHealth = 100;
-    m_s->engine.addEntity(Entity({ player, playerPos, playerHealth }));
+    m_s->engine.addEntity(Entity({ player, playerPos, playerHealth, playerCollision }));
 
     InputComponent input;
     m_s->engine.addEntity(Entity({ input }));

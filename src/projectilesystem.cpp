@@ -10,7 +10,7 @@ ProjectileSystem::ProjectileSystem()
 {
 }
 
-void ProjectileSystem::update(ECSEngine& engine, float deltaTime)
+void ProjectileSystem::update(ECSEngine& engine, float)
 {
     SceneComponent scene = engine.getOne<SceneComponent>();
 
@@ -27,6 +27,10 @@ void ProjectileSystem::update(ECSEngine& engine, float deltaTime)
         for (Entity& collidable : engine.iterate<CollidableComponent>()) {
             glm::vec2 enemyPos = collidable.get<PosComponent>().pos;
             CollidableComponent& collide = collidable.get<CollidableComponent>();
+
+            if (collidable.has<PlayerComponent>()) {
+                continue;
+            }
 
             // collision detection
             if (glm::distance(enemyPos, bulletPos) < collide.radius) {

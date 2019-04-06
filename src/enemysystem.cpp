@@ -103,6 +103,8 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 vel.vel.x = 0.1f;
                 vel.vel.y = -0.8f;
                 break;
+            default:
+                break;
             }
 
             pos.pos.y += collide.radius;
@@ -140,11 +142,13 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         }
 
         ent.get<EnemyComponent>().timeSinceHit += deltaTime;
-        glm::vec2 pos = ent.get<PosComponent>().pos;
+        glm::vec2& pos = ent.get<PosComponent>().pos;
         if (pos.x < -1 || pos.x > 1) {
             VelComponent& vel = ent.get<VelComponent>();
             vel.vel.x = -vel.vel.x;
         }
+
+        pos.x = glm::clamp(pos.x, -1.0f, 1.0f);
     }
 
     std::vector<Entity> shrapnels;

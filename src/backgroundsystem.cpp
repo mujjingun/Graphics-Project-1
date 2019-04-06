@@ -32,7 +32,6 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
 
     std::uniform_int_distribution<> colorDist(0, 4);
 
-    // TODO: cap number of stars
     while (m_elapsed > m_next) {
         // make a new star
         StarComponent star;
