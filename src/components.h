@@ -8,7 +8,7 @@ namespace ou {
 
 struct SceneComponent {
     float aspectRatio;
-    glm::mat4 viewProjMat;
+    int windowWidth, windowHeight;
     float elapsedTime;
 };
 
@@ -53,9 +53,13 @@ struct InputComponent {
 struct PlayerComponent {
     glm::vec2 dest;
     float timeSinceBullet;
+    float timeSinceHit;
+    bool isDead = false;
+    float timeSinceDead;
 };
 
-enum class EnemyType {
+enum class EntityType {
+    PLAYER,
     CAR,
     HOUSE,
     COCKTAIL,
@@ -64,7 +68,7 @@ enum class EnemyType {
 };
 
 struct EnemyComponent {
-    EnemyType type;
+    EntityType type;
     int shrapnelCount;
     float timeSinceHit;
 };
@@ -77,7 +81,7 @@ struct CollidableComponent {
 };
 
 struct ShrapnelComponent {
-    EnemyType type;
+    EntityType type;
     float scale;
     float elapsedTime;
 };

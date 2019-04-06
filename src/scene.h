@@ -29,8 +29,6 @@ class Scene {
 
     void reshapeWindow(int width, int height);
 
-    void realRender();
-
 public:
     Scene();
     ~Scene();
@@ -39,13 +37,7 @@ public:
 
     void render();
 
-    int windowWidth() const;
-    int windowHeight() const;
-
-    double deltaTime() const;
-
     glm::dvec2 mouseDelta() const;
-    glm::mat4 viewProjMat() const;
 
     friend class Callbacks;
 };

@@ -19,12 +19,12 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     std::uniform_real_distribution<> posDist(-1, 1);
     std::discrete_distribution<> typeDist({ 2, 1, 2, 1, 2 });
     std::discrete_distribution<> cntDist({ 0, 3, 4, 3, 2, 1 });
-    EnemyType types[] = {
-        EnemyType::CAR,
-        EnemyType::HOUSE,
-        EnemyType::COCKTAIL,
-        EnemyType::SQUID,
-        EnemyType::BALLOON,
+    EntityType types[] = {
+        EntityType::CAR,
+        EntityType::HOUSE,
+        EntityType::COCKTAIL,
+        EntityType::SQUID,
+        EntityType::BALLOON,
     };
 
     m_elapsed += deltaTime;
@@ -34,9 +34,9 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
 
         // make a new row of enemies
         int cnt = cntDist(m_gen);
-        EnemyType type = types[typeDist(m_gen)];
+        EntityType type = types[typeDist(m_gen)];
 
-        if (type == EnemyType::SQUID) {
+        if (type == EntityType::SQUID) {
             cnt = 1;
             m_nextEnemyTime = 2;
         } else {
@@ -68,35 +68,35 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
             HealthComponent health;
 
             switch (type) {
-            case EnemyType::HOUSE:
+            case EntityType::HOUSE:
                 collide.radius = 0.15f;
                 enemy.shrapnelCount = 20;
                 health.maxHealth = 10;
                 vel.vel.x = 0;
                 vel.vel.y = -0.1f;
                 break;
-            case EnemyType::CAR:
+            case EntityType::CAR:
                 collide.radius = 0.10f;
                 enemy.shrapnelCount = 10;
                 health.maxHealth = 5;
                 vel.vel.x = 0.5f;
                 vel.vel.y = -0.5f;
                 break;
-            case EnemyType::COCKTAIL:
+            case EntityType::COCKTAIL:
                 collide.radius = 0.08f;
                 enemy.shrapnelCount = 5;
                 health.maxHealth = 2;
                 vel.vel.x = 0;
                 vel.vel.y = -0.3f;
                 break;
-            case EnemyType::SQUID:
+            case EntityType::SQUID:
                 collide.radius = 0.2f;
                 enemy.shrapnelCount = 20;
                 health.maxHealth = 30;
                 vel.vel.x = 0;
                 vel.vel.y = -0.1f;
                 break;
-            case EnemyType::BALLOON:
+            case EntityType::BALLOON:
                 collide.radius = 0.08f;
                 enemy.shrapnelCount = 5;
                 health.maxHealth = 1;
@@ -125,7 +125,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         PosComponent pos = ent.get<PosComponent>();
         if (pos.pos.y < -scene.aspectRatio - 0.2f) {
             player.get<HealthComponent>().health -= 5;
-            // TODO: do damage animation
+            player.get<PlayerComponent>().timeSinceHit = 0;
             return true;
         }
         return false;

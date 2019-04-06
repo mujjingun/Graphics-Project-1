@@ -49,6 +49,7 @@ namespace {
 
         void render(glm::mat4 mat)
         {
+            mat = mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 18.0f));
             SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
@@ -139,10 +140,10 @@ namespace {
             return &me;
         }
 
-        void render(glm::mat4 viewProjMat, glm::mat4 mat)
+        void render(glm::mat4 mat)
         {
             mat = mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 18.0f));
-            SimpleShader::self()->setUniform(0, viewProjMat * mat);
+            SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
             SimpleShader::self()->use();
@@ -230,10 +231,10 @@ namespace {
             return &me;
         }
 
-        void render(glm::mat4 viewProjMat, glm::mat4 mat)
+        void render(glm::mat4 mat)
         {
             mat = mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 18.0f));
-            SimpleShader::self()->setUniform(0, viewProjMat * mat);
+            SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
             SimpleShader::self()->use();
@@ -350,10 +351,10 @@ namespace {
             return &me;
         }
 
-        void render(glm::mat4 viewProjMat, glm::mat4 mat)
+        void render(glm::mat4 mat)
         {
             mat = mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 18.0f));
-            SimpleShader::self()->setUniform(0, viewProjMat * mat);
+            SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
             SimpleShader::self()->use();
@@ -472,11 +473,11 @@ namespace {
             return &me;
         }
 
-        void render(glm::mat4 viewProjMat, glm::mat4 mat)
+        void render(glm::mat4 mat)
         {
             mat = mat * glm::translate(glm::mat4(1.0), glm::vec3(-1))
                 * glm::scale(glm::mat4(1.0), glm::vec3(1.f / 16));
-            SimpleShader::self()->setUniform(0, viewProjMat * mat);
+            SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
             SimpleShader::self()->use();
@@ -587,11 +588,11 @@ namespace {
             return &me;
         }
 
-        void render(glm::mat4 viewProjMat, glm::mat4 mat)
+        void render(glm::mat4 mat)
         {
             mat = mat * glm::translate(glm::mat4(1.0), glm::vec3(-1))
                 * glm::scale(glm::mat4(1.0), glm::vec3(1.f / 16));
-            SimpleShader::self()->setUniform(0, viewProjMat * mat);
+            SimpleShader::self()->setUniform(0, mat);
 
             vao.use();
             SimpleShader::self()->use();
@@ -629,17 +630,32 @@ RenderSystem::RenderSystem()
 {
 }
 
-void RenderSystem::update(ECSEngine& engine, float deltaTime)
+void RenderSystem::update(ECSEngine& engine, float)
 {
     SceneComponent const& scene = engine.getOne<SceneComponent>();
     Entity const& player = engine.getOneEnt<PlayerComponent>();
 
-    //    if (m_s->damageTime + 0.3f > m_s->time) {
-    //        float mag = m_s->damageTime + 0.3f - m_s->time;
-    //        float t = m_s->time - m_s->damageTime;
-    //        float y = mag * glm::sin(t * 80) * 0.1f;
-    //        viewMat = glm::translate(glm::mat4(1.0f), glm::vec3(y, y, 0));
-    //    }
+    glm::mat4 projMat;
+    float realAspectRatio = scene.windowWidth / float(scene.windowHeight);
+    if (scene.windowWidth * scene.aspectRatio > scene.windowHeight) {
+        projMat = glm::ortho(-scene.aspectRatio * realAspectRatio,
+            scene.aspectRatio * realAspectRatio,
+            -scene.aspectRatio, scene.aspectRatio, -1000.0f, 1000.0f);
+    } else {
+        projMat = glm::ortho(-1.0f, 1.0f, -1 / realAspectRatio, 1 / realAspectRatio, -1000.0f, 1000.0f);
+    }
+
+    glm::mat4 viewMat = glm::mat4(1.0f);
+
+    PlayerComponent const& playerComp = player.get<PlayerComponent>();
+    float playerTimeSinceHit = playerComp.timeSinceHit;
+    if (playerTimeSinceHit < 0.5f) {
+        float jitter = glm::sin(playerTimeSinceHit * 80);
+        jitter *= (0.5f - playerTimeSinceHit) * 0.1f;
+        viewMat = viewMat * glm::translate(glm::mat4(1), glm::vec3(jitter));
+    }
+
+    glm::mat4 viewProjMat = projMat * viewMat;
 
     // render background stars and projectiles
     std::vector<PointAttrib> attribs;
@@ -668,24 +684,26 @@ void RenderSystem::update(ECSEngine& engine, float deltaTime)
 
     m_pointsBuf.vbo.updateData(attribs);
 
-    PointShader::self()->setUniform(0, scene.viewProjMat);
+    PointShader::self()->setUniform(0, viewProjMat);
 
     m_pointsBuf.vao.use();
     PointShader::self()->use();
     glDrawArrays(GL_POINTS, 0, int(attribs.size()));
 
     // render shrapnels
-    auto render = [](EnemyType type, glm::mat4 viewProjMat, glm::mat4 modelMat){
-        if (type == EnemyType::HOUSE) {
-            HouseData::self()->render(viewProjMat, modelMat);
-        } else if (type == EnemyType::CAR) {
-            CarData::self()->render(viewProjMat, modelMat);
-        } else if (type == EnemyType::COCKTAIL) {
-            CocktailData::self()->render(viewProjMat, modelMat);
-        } else if (type == EnemyType::SQUID) {
-            SquidData::self()->render(viewProjMat, modelMat);
-        } else if (type == EnemyType::BALLOON) {
-            BaloonData::self()->render(viewProjMat, modelMat);
+    auto render = [](EntityType type, glm::mat4 mat) {
+        if (type == EntityType::HOUSE) {
+            HouseData::self()->render(mat);
+        } else if (type == EntityType::CAR) {
+            CarData::self()->render(mat);
+        } else if (type == EntityType::COCKTAIL) {
+            CocktailData::self()->render(mat);
+        } else if (type == EntityType::SQUID) {
+            SquidData::self()->render(mat);
+        } else if (type == EntityType::BALLOON) {
+            BaloonData::self()->render(mat);
+        } else if (type == EntityType::PLAYER) {
+            PlaneData::self()->render(mat);
         }
     };
 
@@ -695,10 +713,10 @@ void RenderSystem::update(ECSEngine& engine, float deltaTime)
         glm::vec2 pos = shrapnel.get<PosComponent>().pos;
 
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0))
-                * glm::rotate(glm::mat4(1.0), glm::radians(angle), glm::vec3(0, 0, 1))
-                * glm::scale(glm::mat4(1.0), glm::vec3(comp.scale));
+            * glm::rotate(glm::mat4(1.0), glm::radians(angle), glm::vec3(0, 0, 1))
+            * glm::scale(glm::mat4(1.0), glm::vec3(comp.scale));
 
-        render(comp.type, scene.viewProjMat, modelMat);
+        render(comp.type, viewProjMat * modelMat);
     }
 
     // render enemies
@@ -716,7 +734,7 @@ void RenderSystem::update(ECSEngine& engine, float deltaTime)
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0));
         float scale;
         switch (comp.type) {
-        case EnemyType::HOUSE:
+        case EntityType::HOUSE:
             scale = glm::sin(scene.elapsedTime * 10) * 0.5f + 1.0f;
             modelMat = modelMat
                 * glm::translate(glm::mat4(1.0), glm::vec3(0, -.15f, 0))
@@ -724,18 +742,18 @@ void RenderSystem::update(ECSEngine& engine, float deltaTime)
                 * glm::translate(glm::mat4(1.0), glm::vec3(0, +.15f, 0))
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
-        case EnemyType::CAR:
+        case EntityType::CAR:
             scale = glm::sin(scene.elapsedTime * 10) * 0.5f + 1.0f;
             modelMat = modelMat
                 * glm::scale(glm::mat4(1.0), glm::vec3(scale, 1, 1))
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
-        case EnemyType::COCKTAIL:
+        case EntityType::COCKTAIL:
             modelMat = modelMat
                 * glm::rotate(glm::mat4(1.0), glm::radians(angle), glm::vec3(0, 0, 1))
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
-        case EnemyType::SQUID:
+        case EntityType::SQUID:
             scale = glm::sin(scene.elapsedTime * 20) * 0.3f + 1.0f;
             modelMat = modelMat
                 * glm::translate(glm::mat4(1.0), glm::vec3(0, -.15f, 0))
@@ -743,36 +761,44 @@ void RenderSystem::update(ECSEngine& engine, float deltaTime)
                 * glm::translate(glm::mat4(1.0), glm::vec3(0, +.15f, 0))
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
-        case EnemyType::BALLOON:
+        case EntityType::BALLOON:
             modelMat = modelMat
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
+        default:
+            break;
         }
 
-        render(comp.type, scene.viewProjMat, modelMat);
+        render(comp.type, viewProjMat * modelMat);
 
         HealthComponent health = enemy.get<HealthComponent>();
         glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos + glm::vec2(0, collide.radius), 0.0f))
             * glm::scale(glm::mat4(1.0), glm::vec3(0.1f, 0.01f, 0.0f));
-        m_hpBar.render(scene.viewProjMat * hpBarModelMat, float(health.health) / health.maxHealth);
+        m_hpBar.render(viewProjMat * hpBarModelMat, float(health.health) / health.maxHealth);
     }
 
     // render player
-    float scaleFactor = (glm::sin(scene.elapsedTime * 20) * 0.1f + 2.0f) / 500.0f;
-    glm::vec2 pos = player.get<PosComponent>().pos;
-    float offset = scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f;
-    pos -= glm::vec2(0.0f, glm::pow(offset, 2.0f) * 2.0f);
-    glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
-        * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
-        * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
+    if (!playerComp.isDead) {
+        float scaleFactor = (glm::sin(scene.elapsedTime * 20) * 0.1f + 1.0f) * 0.08f;
+        glm::vec2 pos = player.get<PosComponent>().pos;
+        float offset = scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f;
+        pos -= glm::vec2(0.0f, glm::pow(offset, 2.0f) * 2.0f);
+        glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
+            * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
+            * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
 
-    PlaneData::self()->render(scene.viewProjMat * modelMat);
+        PlaneData::self()->render(viewProjMat * modelMat);
+    }
 
     // render health bar
     glm::mat4 hpBarProjMat = glm::ortho(-1.0f, 1.0f,
         -scene.aspectRatio, scene.aspectRatio, -1000.0f, 1000.0f);
 
     float hpBarScale = 0.02f;
+    if (playerTimeSinceHit < 0.5f) {
+        hpBarScale += (0.5f - playerTimeSinceHit) * 0.4f;
+    }
+
     glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, -scene.aspectRatio, 0.0f))
         * glm::scale(glm::mat4(1.0), glm::vec3(1.f, hpBarScale, 0.0f));
 

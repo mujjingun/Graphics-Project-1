@@ -45,48 +45,12 @@ struct SceneStates {
     bool captureMouse = false;
     bool warpPointer = false;
 
-    int windowWidth = -1, windowHeight = -1;
-
     ECSEngine engine{};
 };
-
-int Scene::windowWidth() const
-{
-    return m_s->windowWidth;
-}
-
-int Scene::windowHeight() const
-{
-    return m_s->windowHeight;
-}
-
-double Scene::deltaTime() const
-{
-    return std::chrono::duration<double>(m_s->deltaTime).count();
-}
 
 glm::dvec2 Scene::mouseDelta() const
 {
     return m_s->smoothedMouseDelta;
-}
-
-glm::mat4 Scene::viewProjMat() const
-{
-    SceneComponent scene = m_s->engine.getOne<SceneComponent>();
-
-    glm::mat4 projMat;
-    float realAspectRatio = windowWidth() / float(windowHeight());
-    if (windowWidth() * scene.aspectRatio > windowHeight()) {
-        projMat = glm::ortho(-scene.aspectRatio * realAspectRatio,
-            scene.aspectRatio * realAspectRatio,
-            -scene.aspectRatio, scene.aspectRatio, -1000.0f, 1000.0f);
-    } else {
-        projMat = glm::ortho(-1.0f, 1.0f, -1 / realAspectRatio, 1 / realAspectRatio, -1000.0f, 1000.0f);
-    }
-
-    glm::mat4 viewMat = glm::mat4(1.0f);
-
-    return projMat * viewMat;
 }
 
 void Scene::mouseClick()
@@ -106,10 +70,12 @@ void Scene::mouseClick()
 
 void Scene::mouseMove(int x, int y)
 {
+    SceneComponent scene = m_s->engine.getOne<SceneComponent>();
+
     if (m_s->captureMouse) {
         glm::ivec2 delta(x - m_s->realMousePos.x, y - m_s->realMousePos.y);
-        glm::ivec2 center(x - m_s->windowWidth / 2, y - m_s->windowHeight / 2);
-        if (std::abs(center.x) > m_s->windowWidth / 3 || std::abs(center.y) > m_s->windowHeight / 3) {
+        glm::ivec2 center(x - scene.windowWidth / 2, y - scene.windowHeight / 2);
+        if (std::abs(center.x) > scene.windowWidth / 3 || std::abs(center.y) > scene.windowHeight / 3) {
             m_s->warpPointer = true;
         }
         m_s->mousePos += delta;
@@ -137,18 +103,16 @@ void Scene::keyUp(unsigned char key)
 
 void Scene::reshapeWindow(int width, int height)
 {
-    if (width == m_s->windowWidth && height == m_s->windowHeight) {
+    SceneComponent& scene = m_s->engine.getOne<SceneComponent>();
+    if (width == scene.windowWidth && height == scene.windowHeight) {
         return;
     }
 
-    m_s->windowWidth = width;
-    m_s->windowHeight = height;
+    scene.windowWidth = width;
+    scene.windowHeight = height;
 
     // Resize viewport
     glViewport(0, 0, width, height);
-
-    // adjust projection matrix
-    m_s->engine.getOne<SceneComponent>().viewProjMat = viewProjMat();
 
     // Build framebuffer
     m_s->hdrFrameBuffer = FrameBuffer();
@@ -176,6 +140,8 @@ void Scene::render()
     m_s->deltaTime = now - m_s->lastFrameTime;
     m_s->lastFrameTime = now;
 
+    float fDeltaTime = std::chrono::duration<float>(m_s->deltaTime).count();
+
     // Clear screen & framebuffer
     float clearColor[] = { 0, 0, 0, 0 };
     FrameBuffer::defaultBuffer().clear(GL_COLOR, 0, clearColor);
@@ -189,8 +155,8 @@ void Scene::render()
     m_s->hdrFrameBuffer.use(GL_FRAMEBUFFER);
     //glEnable(GL_DEPTH_TEST);
 
-    // render stuff
-    realRender();
+    // render and update stuff
+    m_s->engine.update(fDeltaTime);
 
     // apply HDR
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);
@@ -209,14 +175,15 @@ void Scene::render()
     } else {
         glm::dvec2 mouseDelta = m_s->mousePos - m_s->lastMousePos;
 
-        double smoothing = 1 - glm::exp(-deltaTime() * 15);
-        m_s->smoothedMouseDelta = mouseDelta * smoothing;
+        float smoothing = 1 - glm::exp(-fDeltaTime * 15);
+        m_s->smoothedMouseDelta = mouseDelta * double(smoothing);
         m_s->lastMousePos += m_s->smoothedMouseDelta;
     }
 
+    SceneComponent scene = m_s->engine.getOne<SceneComponent>();
     if (m_s->captureMouse && m_s->warpPointer) {
-        glutWarpPointer(m_s->windowWidth / 2, m_s->windowHeight / 2);
-        m_s->realMousePos = { m_s->windowWidth / 2, m_s->windowHeight / 2 };
+        glutWarpPointer(scene.windowWidth / 2, scene.windowHeight / 2);
+        m_s->realMousePos = { scene.windowWidth / 2, scene.windowHeight / 2 };
         m_s->warpPointer = false;
     }
 }
@@ -238,11 +205,14 @@ Scene::Scene()
     SceneComponent scene;
     scene.aspectRatio = 1.6f;
     scene.elapsedTime = 0;
+    scene.windowWidth = -1;
+    scene.windowHeight = -1;
     m_s->engine.addEntity(Entity({ scene }));
 
     PlayerComponent player;
     player.dest = { 0, -1 };
     player.timeSinceBullet = -1;
+    player.timeSinceHit = 10;
 
     PosComponent playerPos;
     playerPos.pos = { 0, -scene.aspectRatio };
@@ -256,11 +226,6 @@ Scene::Scene()
     m_s->engine.addEntity(Entity({ input }));
 
     m_s->lastFrameTime = std::chrono::system_clock::now();
-}
-
-void Scene::realRender()
-{
-    m_s->engine.update(float(deltaTime()));
 }
 
 Scene::Scene(Scene&&) = default;
