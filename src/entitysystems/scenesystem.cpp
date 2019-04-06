@@ -16,7 +16,7 @@ void SceneSystem::update(ECSEngine& engine, float deltaTime)
     scene.elapsedTime += deltaTime;
 
     PlayerComponent playerComp = engine.getOne<PlayerComponent>();
-    if (playerComp.isDead && playerComp.timeSinceDead > 2) {
+    if (playerComp.isDead && playerComp.timeSinceDead > 3) {
 
         // reset game
         Entity& player = engine.getOneEnt<PlayerComponent>();
@@ -35,6 +35,7 @@ void SceneSystem::update(ECSEngine& engine, float deltaTime)
         engine.removeEntities<ProjectileComponent>();
 
         scene.elapsedTime = 0;
+        scene.score = 0;
     }
 }
 }

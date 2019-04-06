@@ -24,6 +24,8 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     comp.timeSinceBullet += deltaTime;
     comp.timeSinceHit += deltaTime;
     comp.timeSinceDead += deltaTime;
+    comp.timeSinceStreak += deltaTime;
+    comp.streakColorElapsed += deltaTime;
 
     // player dead
     if (!comp.isDead && health.health <= 0) {
@@ -67,14 +69,49 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
         ProjectileComponent projectile;
         projectile.type = ProjectileComponent::Type::Player;
 
-        PosComponent bulletPos;
-        bulletPos.pos = pos.pos + glm::vec2(0, 0.1f);
-
         VelComponent vel;
         vel.vel = { 0, 3.0f };
 
+        PosComponent bulletPos;
+        bulletPos.pos = pos.pos + glm::vec2(0, 0.1f) + vel.vel * comp.timeSinceBullet;
+
         engine.addEntity(Entity({ projectile, bulletPos, vel }));
     }
+
+    float streakInterval = 0.005f;
+    while (comp.timeSinceStreak > streakInterval) {
+        comp.timeSinceStreak -= streakInterval;
+
+        StreakComponent streak;
+        streak.color = glm::mix(comp.lastStreakColor, comp.nextStreakColor, comp.streakColorElapsed);
+
+        VelComponent vel = { { 0, -3.0f } };
+
+        float offset = glm::pow(scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f, 2.0f);
+
+        PosComponent streakPos;
+        streakPos.pos = pos.pos + glm::vec2(0.05f, -0.08f) + vel.vel * comp.timeSinceStreak;
+        streakPos.pos.y -= offset;
+
+        engine.addEntity(Entity({ streak, streakPos, vel }));
+
+        streakPos.pos = pos.pos + glm::vec2(-0.05f, -0.08f) + vel.vel * comp.timeSinceStreak;
+        streakPos.pos.y -= offset;
+        engine.addEntity(Entity({ streak, streakPos, vel }));
+    }
+
+    if (comp.streakColorElapsed >= 1) {
+        comp.streakColorElapsed -= 1;
+
+        std::uniform_real_distribution<float> colorDist(0, 1);
+
+        comp.lastStreakColor = comp.nextStreakColor;
+        comp.nextStreakColor = glm::vec3(colorDist(engine.rand()), colorDist(engine.rand()), 1);
+    }
+
+    engine.removeEntities<StreakComponent>([&](Entity& ent) {
+        return ent.get<PosComponent>().pos.y < -scene.aspectRatio;
+    });
 
     // move plane
     glm::vec2 moveDelta = {};
@@ -97,7 +134,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
         moveDelta = glm::normalize(moveDelta) * deltaTime * moveSpeed;
     }
     comp.dest = glm::clamp(comp.dest + moveDelta,
-        -glm::vec2(1.0f, scene.aspectRatio), glm::vec2(1.0f, scene.aspectRatio));
+        -glm::vec2(1.0f, 1.0f), glm::vec2(1.0f, scene.aspectRatio));
 
     // apply smoothing
     float smoothing = 1 - glm::exp(-deltaTime * 15);

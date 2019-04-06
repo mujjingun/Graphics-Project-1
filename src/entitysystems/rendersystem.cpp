@@ -6,8 +6,10 @@
 #include "pointshader.h"
 #include "simpleshader.h"
 
+#include <GL/freeglut.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <sstream>
 
 namespace ou {
 
@@ -38,10 +40,9 @@ void RenderSystem::update(ECSEngine& engine, float)
     glm::mat4 viewMat = glm::mat4(1.0f);
 
     PlayerComponent const& playerComp = player.get<PlayerComponent>();
-    float playerTimeSinceHit = playerComp.timeSinceHit;
-    if (playerTimeSinceHit < 0.5f) {
-        float jitter = glm::sin(playerTimeSinceHit * 80);
-        jitter *= (0.5f - playerTimeSinceHit) * 0.1f;
+    if (playerComp.timeSinceHit < 0.5f) {
+        float jitter = glm::sin(playerComp.timeSinceHit * 80);
+        jitter *= (0.5f - playerComp.timeSinceHit) * 0.1f;
         viewMat = viewMat * glm::translate(glm::mat4(1), glm::vec3(jitter));
     }
 
@@ -57,7 +58,7 @@ void RenderSystem::update(ECSEngine& engine, float)
         PointAttrib attrib;
         attrib.pos = pos.pos;
         attrib.color = { 5, 5, 5 };
-        attrib.size = 5;
+        attrib.size = 6;
 
         if (attribs.size() < max_particles) {
             attribs.push_back(attrib);
@@ -74,6 +75,19 @@ void RenderSystem::update(ECSEngine& engine, float)
         attrib.pos -= player.get<PosComponent>().pos * float(star.size) * 0.1f;
         attrib.color = star.color;
         attrib.size = star.size;
+
+        if (attribs.size() < max_particles) {
+            attribs.push_back(attrib);
+        }
+    }
+
+    for (Entity& ent : engine.iterate<StreakComponent>()) {
+        PosComponent pos = ent.get<PosComponent>();
+
+        PointAttrib attrib;
+        attrib.pos = pos.pos;
+        attrib.color = ent.get<StreakComponent>().color;
+        attrib.size = 8;
 
         if (attribs.size() < max_particles) {
             attribs.push_back(attrib);
@@ -181,8 +195,8 @@ void RenderSystem::update(ECSEngine& engine, float)
     if (!playerComp.isDead) {
         float scaleFactor = (glm::sin(scene.elapsedTime * 20) * 0.1f + 1.0f) * 0.08f;
         glm::vec2 pos = player.get<PosComponent>().pos;
-        float offset = scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f;
-        pos -= glm::vec2(0.0f, glm::pow(offset, 2.0f) * 2.0f);
+        float offset = glm::pow(scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f, 2.0f);
+        pos.y -= offset;
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
             * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
             * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
@@ -195,8 +209,8 @@ void RenderSystem::update(ECSEngine& engine, float)
         -scene.aspectRatio, scene.aspectRatio, -1000.0f, 1000.0f);
 
     float hpBarScale = 0.02f;
-    if (playerTimeSinceHit < 0.5f) {
-        hpBarScale += (0.5f - playerTimeSinceHit) * 0.4f;
+    if (playerComp.timeSinceHit < 0.5f) {
+        hpBarScale += (0.5f - playerComp.timeSinceHit) * 0.4f;
     }
 
     glm::mat4 hpBarModelMat = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, -scene.aspectRatio, 0.0f))
@@ -205,5 +219,15 @@ void RenderSystem::update(ECSEngine& engine, float)
     HealthComponent playerHealth = player.get<HealthComponent>();
     float playerHealthRatio = float(playerHealth.health) / playerHealth.maxHealth;
     m_hpBar.render(hpBarProjMat * hpBarModelMat, playerHealthRatio);
+
+    // update title bar
+    std::ostringstream oss;
+    oss << "Sogang CSE4170 20171634 -- Score " << scene.score;
+
+    if (playerComp.isDead) {
+        oss << ", Game over";
+    }
+
+    glutSetWindowTitle(oss.str().c_str());
 }
 }

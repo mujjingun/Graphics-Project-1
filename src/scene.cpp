@@ -154,6 +154,8 @@ void Scene::render()
 
     // Render stuff to framebuffer
     m_s->hdrFrameBuffer.use(GL_FRAMEBUFFER);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glEnable(GL_DEPTH_TEST);
 
     // render and update stuff
@@ -161,6 +163,7 @@ void Scene::render()
 
     // apply HDR
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);
+    glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);
 
     m_s->hdrVao.use();
@@ -209,12 +212,14 @@ Scene::Scene()
     scene.elapsedTime = 0;
     scene.windowWidth = -1;
     scene.windowHeight = -1;
+    scene.score = 0;
     m_s->engine.addEntity(Entity({ scene }));
 
     PlayerComponent player;
     player.dest = { 0, -1 };
     player.timeSinceBullet = -1;
     player.timeSinceHit = 10;
+    player.timeSinceStreak = 0;
 
     CollidableComponent playerCollision;
     playerCollision.radius = 0.1f;

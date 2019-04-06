@@ -10,6 +10,7 @@ struct SceneComponent {
     float aspectRatio;
     int windowWidth, windowHeight;
     float elapsedTime;
+    int score;
 };
 
 struct HealthComponent {
@@ -52,10 +53,14 @@ struct InputComponent {
 
 struct PlayerComponent {
     glm::vec2 dest;
+    float timeSinceStreak;
     float timeSinceBullet;
     float timeSinceHit;
     bool isDead = false;
     float timeSinceDead;
+    glm::vec3 lastStreakColor = glm::vec3(0, 0, 1);
+    glm::vec3 nextStreakColor = glm::vec3(0, 0, 1);
+    float streakColorElapsed = 1;
 };
 
 enum class EntityType {
@@ -86,5 +91,8 @@ struct ShrapnelComponent {
     float elapsedTime;
 };
 
+struct StreakComponent {
+    glm::vec3 color;
+};
 }
 #endif // COMPONENTS_H

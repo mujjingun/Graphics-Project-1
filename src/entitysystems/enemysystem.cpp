@@ -12,7 +12,7 @@ EnemySystem::EnemySystem()
 
 void EnemySystem::update(ECSEngine& engine, float deltaTime)
 {
-    SceneComponent const& scene = engine.getOne<SceneComponent>();
+    SceneComponent& scene = engine.getOne<SceneComponent>();
     Entity& player = engine.getOneEnt<PlayerComponent>();
 
     std::uniform_real_distribution<> posDist(-1, 1);
@@ -35,11 +35,12 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         int cnt = cntDist(engine.rand());
         EntityType type = types[typeDist(engine.rand())];
 
+        m_nextEnemyTime = 1;
         if (type == EntityType::SQUID) {
             cnt = 1;
             m_nextEnemyTime = 2;
-        } else {
-            m_nextEnemyTime = 1;
+        } else if (type == EntityType::HOUSE) {
+            cnt = cnt % 3;
         }
 
         for (int i = 0; i < cnt; ++i) {
@@ -92,14 +93,14 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 collide.radius = 0.2f;
                 enemy.shrapnelCount = 20;
                 health.maxHealth = 30;
-                vel.vel.x = 0;
+                vel.vel.x = 0.2f;
                 vel.vel.y = -0.1f;
                 break;
             case EntityType::BALLOON:
                 collide.radius = 0.08f;
                 enemy.shrapnelCount = 5;
                 health.maxHealth = 1;
-                vel.vel.x = 0.1f;
+                vel.vel.x = 0.5f;
                 vel.vel.y = -0.8f;
                 break;
             default:
@@ -125,8 +126,10 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     engine.removeEntities<EnemyComponent>([&](Entity& ent) {
         PosComponent pos = ent.get<PosComponent>();
         if (pos.pos.y < -scene.aspectRatio - 0.2f) {
-            player.get<HealthComponent>().health -= 5;
-            player.get<PlayerComponent>().timeSinceHit = 0;
+            if (player.get<HealthComponent>().health > 0) {
+                player.get<HealthComponent>().health -= 5;
+                player.get<PlayerComponent>().timeSinceHit = 0;
+            }
             return true;
         }
         return false;
@@ -143,8 +146,19 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         ent.get<EnemyComponent>().timeSinceHit += deltaTime;
         glm::vec2& pos = ent.get<PosComponent>().pos;
         if (pos.x < -1 || pos.x > 1) {
-            VelComponent& vel = ent.get<VelComponent>();
-            vel.vel.x = -vel.vel.x;
+            glm::vec2& vel = ent.get<VelComponent>().vel;
+            vel.x = -vel.x;
+        }
+
+        if (ent.get<EnemyComponent>().type == EntityType::SQUID
+            || ent.get<EnemyComponent>().type == EntityType::BALLOON) {
+            glm::vec2& vel = ent.get<VelComponent>().vel;
+            if (pos.x < player.get<PosComponent>().pos.x) {
+                vel.x = -glm::abs(vel.x);
+            } else {
+                vel.x = glm::abs(vel.x);
+            }
+            pos.x = glm::clamp(pos.x, -0.9f, 0.9f);
         }
 
         pos.x = glm::clamp(pos.x, -1.0f, 1.0f);
@@ -154,6 +168,29 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     engine.removeEntities<EnemyComponent>([&](Entity& ent) {
         bool isDead = ent.get<HealthComponent>().health <= 0;
         if (isDead) {
+
+            // update scores
+            switch (ent.get<EnemyComponent>().type) {
+            case EntityType::HOUSE:
+                scene.score += 5;
+                break;
+            case EntityType::CAR:
+                scene.score += 3;
+                break;
+            case EntityType::COCKTAIL:
+                scene.score += 2;
+                break;
+            case EntityType::SQUID:
+                scene.score += 10;
+                break;
+            case EntityType::BALLOON:
+                scene.score += 1;
+                break;
+            default:
+                break;
+            }
+
+            // emit shrapnels
             std::normal_distribution<float> normalDist;
             std::uniform_real_distribution<float> angleDist(0, 360);
 

@@ -35,6 +35,42 @@ public:
         scene->keyUp(key);
     }
 
+    static void specialKeyboardDown(int key, int, int)
+    {
+        switch (key) {
+        case GLUT_KEY_LEFT:
+            scene->keyDown('a');
+            break;
+        case GLUT_KEY_RIGHT:
+            scene->keyDown('d');
+            break;
+        case GLUT_KEY_UP:
+            scene->keyDown('w');
+            break;
+        case GLUT_KEY_DOWN:
+            scene->keyDown('s');
+            break;
+        }
+    }
+
+    static void specialKeyboardUp(int key, int, int)
+    {
+        switch (key) {
+        case GLUT_KEY_LEFT:
+            scene->keyUp('a');
+            break;
+        case GLUT_KEY_RIGHT:
+            scene->keyUp('d');
+            break;
+        case GLUT_KEY_UP:
+            scene->keyUp('w');
+            break;
+        case GLUT_KEY_DOWN:
+            scene->keyUp('s');
+            break;
+        }
+    }
+
     static void mouseMove(int x, int y)
     {
         scene->mouseMove(x, y);
@@ -128,10 +164,12 @@ int main(int argc, char* argv[])
 {
     // init GLUT and create Window
     glutInit(&argc, argv);
+    glutInitContextVersion(4, 5);
+    glutInitContextProfile(GLUT_CORE_PROFILE);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(600, 800);
-    glutCreateWindow("Sogang CSE4170 20171634 -- Use WASD keys to control");
+    glutCreateWindow("Sogang CSE4170 20171634");
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -142,6 +180,8 @@ int main(int argc, char* argv[])
     // register callbacks
     glutKeyboardFunc(ou::Callbacks::keyboardDown);
     glutKeyboardUpFunc(ou::Callbacks::keyboardUp);
+    glutSpecialFunc(ou::Callbacks::specialKeyboardDown);
+    glutSpecialUpFunc(ou::Callbacks::specialKeyboardUp);
     glutDisplayFunc(ou::Callbacks::renderScene);
     glutPassiveMotionFunc(ou::Callbacks::mouseMove);
     glutEntryFunc(ou::Callbacks::mouseEntry);
