@@ -18,7 +18,7 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
     // number of occurances every second
     std::exponential_distribution<float> timeDist(20);
     std::uniform_real_distribution<float> xDist(-1.5, 1.5);
-    std::discrete_distribution<> distanceDist({ 5, 4, 3, 2, 1 });
+    std::discrete_distribution<> distanceDist({ 25, 16, 9, 4, 1 });
 
     glm::vec3 colors[] = {
         { 161, 191, 255 },
@@ -31,6 +31,8 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
     SceneComponent const& scene = engine.getOne<SceneComponent>();
 
     std::uniform_int_distribution<> colorDist(0, 4);
+
+    // TODO: cap number of stars
     while (m_elapsed > m_next) {
         // make a new star
         StarComponent star;
@@ -38,7 +40,7 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
         star.color = colors[colorDist(m_gen)] / 255.0f * 0.7f;
 
         PosComponent pos;
-        float y = scene.aspectRatio;
+        float y = scene.aspectRatio * 2;
         y -= (m_elapsed - m_next) * star.size * 0.5f;
         pos.pos = glm::vec2(xDist(m_gen), y);
 
@@ -53,8 +55,8 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
         m_next = timeDist(m_gen);
     }
 
-    engine.removeEntity<StarComponent>([&](Entity& ent) {
-        return ent.get<PosComponent>().pos.y < -scene.aspectRatio;
+    engine.removeEntities<StarComponent>([&](Entity& ent) {
+        return ent.get<PosComponent>().pos.y < -scene.aspectRatio * 2;
     });
 }
 }

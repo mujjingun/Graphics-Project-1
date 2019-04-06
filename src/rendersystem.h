@@ -3,12 +3,14 @@
 
 #include "entitysystem.h"
 #include "pointdata.h"
+#include "hpbar.h"
 
 namespace ou {
 
 class RenderSystem : public EntitySystem {
 
-    PointData m_starBuf;
+    PointData m_pointsBuf;
+    HpBar m_hpBar;
 
 public:
     RenderSystem();

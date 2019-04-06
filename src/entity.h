@@ -1,6 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <list>
 #include <memory>
 #include <typeindex>
 #include <typeinfo>
@@ -10,6 +11,7 @@
 namespace ou {
 
 class EntitySystem;
+class ECSEngine;
 class Component {
 private:
     struct Interface {
@@ -26,15 +28,9 @@ private:
         {
         }
 
-        Component clone() const
-        {
-            return data;
-        }
+        Component clone() const { return data; }
 
-        std::type_index type() const
-        {
-            return typeid(T);
-        }
+        std::type_index type() const { return typeid(T); }
 
         T data;
     };
@@ -91,9 +87,23 @@ public:
 
 class Entity {
     std::unordered_map<std::type_index, Component> m_components;
+    ECSEngine* m_engine = nullptr;
+
+    using ListIter = std::list<Entity>::iterator;
+    ListIter m_iter;
 
 public:
+    Entity() = default;
     Entity(std::vector<Component>&& components);
+
+    void added(ECSEngine* engine, ListIter iter);
+
+    void addComponent(Component&& component);
+
+    void removeComponent(std::type_index type);
+
+    template <typename T>
+    void removeComponent() { removeComponent(typeid(T)); }
 
     bool has(std::type_index idx) const;
 

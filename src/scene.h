@@ -15,9 +15,6 @@
 
 namespace ou {
 
-class Airplane;
-class Enemy;
-
 struct SceneStates;
 
 class Scene {
@@ -44,18 +41,13 @@ public:
 
     int windowWidth() const;
     int windowHeight() const;
-    bool isKeyPressed(unsigned char key) const;
 
     double deltaTime() const;
 
     glm::dvec2 mouseDelta() const;
     glm::mat4 viewProjMat() const;
 
-    float aspectRatio() const;
-
     friend class Callbacks;
-    std::vector<std::unique_ptr<Enemy>>& enemies();
-    std::unique_ptr<Airplane>& airplane();
 };
 }
 

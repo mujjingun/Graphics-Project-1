@@ -15,12 +15,14 @@
 namespace ou {
 
 class ECSEngine {
+    friend class Entity;
+
     using ListIter = std::list<Entity>::iterator;
 
     struct ListIterHash {
         size_t operator()(ListIter it) const
         {
-            return std::hash<Entity*>()(&*it);
+            return std::hash<Entity*>{}(&*it);
         }
     };
     using Mapping = std::unordered_set<ListIter, ListIterHash>;
@@ -74,13 +76,20 @@ public:
 
     void addEntity(Entity&& entity);
 
-    void removeEntity(Iterator first, Iterator last, std::function<bool(Entity&)> pred);
+    void removeEntities(Iterator first, Iterator last, std::function<bool(Entity&)> pred);
 
     template <typename T0, typename... Ts>
-    void removeEntity(std::function<bool(Entity&)> pred)
+    void removeEntities(std::function<bool(Entity&)> pred)
     {
-        Range range = components<T0, Ts...>();
-        removeEntity(range.begin(), range.end(), pred);
+        Range range = iterate<T0, Ts...>();
+        removeEntities(range.begin(), range.end(), pred);
+    }
+
+    template <typename T0, typename... Ts>
+    void removeEntities()
+    {
+        Range range = iterate<T0, Ts...>();
+        removeEntities(range.begin(), range.end(), [](Entity&) { return true; });
     }
 
     std::size_t countEntity() const;
@@ -88,7 +97,7 @@ public:
     template <typename T>
     T& getOne()
     {
-        Range range = components<T>();
+        Range range = iterate<T>();
         if (range.begin() == range.end()) {
             throw std::runtime_error("No such entity");
         }
@@ -99,7 +108,7 @@ public:
     template <typename T0, typename... Ts>
     Entity& getOneEnt()
     {
-        Range range = components<T0, Ts...>();
+        Range range = iterate<T0, Ts...>();
         if (range.begin() == range.end()) {
             throw std::runtime_error("No such entity");
         }
@@ -111,7 +120,7 @@ public:
     void update(float deltaTime);
 
     template <typename T0, typename... Ts>
-    Range components() { return Range(this, { typeid(T0), typeid(Ts)... }); }
+    Range iterate() { return Range(this, { typeid(T0), typeid(Ts)... }); }
 };
 }
 

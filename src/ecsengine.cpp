@@ -12,12 +12,14 @@ ECSEngine::ECSEngine()
 void ECSEngine::addEntity(Entity&& entity)
 {
     m_entities.push_back(std::move(entity));
+    ListIter it = std::prev(m_entities.end());
+    m_entities.back().added(this, it);
     for (auto const& comp : m_entities.back().components()) {
-        m_mappings[comp.first].insert(std::prev(m_entities.end()));
+        m_mappings[comp.first].insert(it);
     }
 }
 
-void ECSEngine::removeEntity(ECSEngine::Iterator first, ECSEngine::Iterator last, std::function<bool(Entity&)> pred)
+void ECSEngine::removeEntities(ECSEngine::Iterator first, ECSEngine::Iterator last, std::function<bool(Entity&)> pred)
 {
     Iterator it = first;
     for (; it != last;) {
