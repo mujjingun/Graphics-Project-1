@@ -4,6 +4,11 @@
 
 namespace ou {
 
+std::mt19937& ECSEngine::rand()
+{
+    return m_gen;
+}
+
 ECSEngine::ECSEngine()
     : m_entities{}
 {

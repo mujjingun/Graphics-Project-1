@@ -36,13 +36,13 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
     while (m_elapsed > m_next) {
         // make a new star
         StarComponent star;
-        star.size = distanceDist(m_gen) + 1;
-        star.color = colors[colorDist(m_gen)] / 255.0f * 0.7f;
+        star.size = distanceDist(engine.rand()) + 1;
+        star.color = colors[colorDist(engine.rand())] / 255.0f * 0.7f;
 
         PosComponent pos;
         float y = scene.aspectRatio * 2;
         y -= (m_elapsed - m_next) * star.size * 0.5f;
-        pos.pos = glm::vec2(xDist(m_gen), y);
+        pos.pos = glm::vec2(xDist(engine.rand()), y);
 
         VelComponent vel;
         vel.vel = glm::vec2(0, -star.size * 0.5);
@@ -52,7 +52,7 @@ void BackgroundSystem::update(ECSEngine& engine, float deltaTime)
         }
 
         m_elapsed -= m_next;
-        m_next = timeDist(m_gen);
+        m_next = timeDist(engine.rand());
     }
 
     engine.removeEntities<StarComponent>([&](Entity& ent) {

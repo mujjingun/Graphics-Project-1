@@ -7,8 +7,6 @@
 namespace ou {
 
 class PlayerSystem : public EntitySystem {
-    std::mt19937 m_gen{ std::random_device{}() };
-
 public:
     PlayerSystem();
 

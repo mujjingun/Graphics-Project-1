@@ -8,6 +8,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <random>
 #include <tuple>
 #include <unordered_set>
 #include <vector>
@@ -31,6 +32,8 @@ class ECSEngine {
     std::list<Entity> m_entities;
     std::unordered_map<std::type_index, Mapping> m_mappings;
     std::multimap<int, std::unique_ptr<EntitySystem>, std::greater<>> m_systems;
+
+    std::mt19937 m_gen{ std::random_device{}() };
 
     class Iterator {
         friend class ECSEngine;
@@ -121,6 +124,8 @@ public:
 
     template <typename T0, typename... Ts>
     Range iterate() { return Range(this, { typeid(T0), typeid(Ts)... }); }
+
+    std::mt19937& rand();
 };
 }
 

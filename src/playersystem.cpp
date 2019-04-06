@@ -37,21 +37,21 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
         for (int i = 0; i < 30; ++i) {
             ShrapnelComponent shrapnel;
             shrapnel.type = EntityType::PLAYER;
-            shrapnel.scale = normalDist(m_gen) * 0.01f + 0.02f;
+            shrapnel.scale = normalDist(engine.rand()) * 0.01f + 0.02f;
             shrapnel.elapsedTime = 0;
 
             AngleComponent angle;
-            angle.angle = angleDist(m_gen);
+            angle.angle = angleDist(engine.rand());
 
             AngleSpeedComponent angleSpeed;
-            angleSpeed.angleSpeed = normalDist(m_gen) * 360;
+            angleSpeed.angleSpeed = normalDist(engine.rand()) * 360;
 
             PosComponent pos;
             pos.pos = player.get<PosComponent>().pos;
 
             VelComponent vel;
-            float velAngle = angleDist(m_gen);
-            vel.vel = glm::vec2(glm::cos(velAngle), glm::sin(velAngle)) * float(3 + normalDist(m_gen));
+            float velAngle = angleDist(engine.rand());
+            vel.vel = glm::vec2(glm::cos(velAngle), glm::sin(velAngle)) * float(3 + normalDist(engine.rand()));
 
             engine.addEntity(Entity({ shrapnel, pos, vel, angle, angleSpeed }));
         }

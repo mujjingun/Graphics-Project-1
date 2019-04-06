@@ -8,7 +8,6 @@
 namespace ou {
 
 class RenderSystem : public EntitySystem {
-
     PointData m_pointsBuf;
     HpBar m_hpBar;
 

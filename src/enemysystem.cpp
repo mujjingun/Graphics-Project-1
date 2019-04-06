@@ -33,8 +33,8 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         m_elapsed -= m_nextEnemyTime;
 
         // make a new row of enemies
-        int cnt = cntDist(m_gen);
-        EntityType type = types[typeDist(m_gen)];
+        int cnt = cntDist(engine.rand());
+        EntityType type = types[typeDist(engine.rand())];
 
         if (type == EntityType::SQUID) {
             cnt = 1;
@@ -46,11 +46,11 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         for (int i = 0; i < cnt; ++i) {
             float x;
             if (cnt == 1) {
-                x = float(posDist(m_gen)) * 0.5f;
+                x = float(posDist(engine.rand())) * 0.5f;
             } else {
-                x = 2.f / (cnt - 1) * (float(posDist(m_gen)) * 0.2f + 1.f) * i - 1.f;
+                x = 2.f / (cnt - 1) * (float(posDist(engine.rand())) * 0.2f + 1.f) * i - 1.f;
             }
-            x += float(posDist(m_gen)) * 0.1f;
+            x += float(posDist(engine.rand())) * 0.1f;
             x = glm::clamp(x, -1.f, 1.f);
             float fastness = scene.elapsedTime * 0.01f;
 
@@ -114,8 +114,8 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
 
             std::normal_distribution<> normalDist;
             std::uniform_real_distribution<> angleDist(0, 360);
-            angle.angle = float(angleDist(m_gen));
-            angleSpeed.angleSpeed = float(normalDist(m_gen)) * 360;
+            angle.angle = float(angleDist(engine.rand()));
+            angleSpeed.angleSpeed = float(normalDist(engine.rand())) * 360;
 
             engine.addEntity(Entity({ enemy, collide, pos, vel, angle, angleSpeed, health }));
         }
@@ -157,22 +157,22 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
             for (int i = 0; i < ent.get<EnemyComponent>().shrapnelCount; ++i) {
                 ShrapnelComponent shrapnel;
                 shrapnel.type = ent.get<EnemyComponent>().type;
-                shrapnel.scale = normalDist(m_gen) * 0.02f + 0.05f;
+                shrapnel.scale = normalDist(engine.rand()) * 0.02f + 0.05f;
                 shrapnel.elapsedTime = 0;
 
                 AngleComponent angle;
-                angle.angle = angleDist(m_gen);
+                angle.angle = angleDist(engine.rand());
 
                 AngleSpeedComponent angleSpeed;
-                angleSpeed.angleSpeed = normalDist(m_gen) * 360;
+                angleSpeed.angleSpeed = normalDist(engine.rand()) * 360;
 
                 PosComponent pos;
                 pos.pos = ent.get<PosComponent>().pos;
 
                 VelComponent vel;
-                float velAngle = angleDist(m_gen);
+                float velAngle = angleDist(engine.rand());
                 vel.vel = ent.get<VelComponent>().vel;
-                vel.vel += glm::vec2(glm::cos(velAngle), glm::sin(velAngle)) * float(3 + normalDist(m_gen));
+                vel.vel += glm::vec2(glm::cos(velAngle), glm::sin(velAngle)) * float(3 + normalDist(engine.rand()));
 
                 shrapnels.push_back(Entity({ shrapnel, pos, vel, angle, angleSpeed }));
             }
