@@ -20,7 +20,8 @@ struct HealthComponent {
 
 struct ProjectileComponent {
     enum class Type {
-        Player,
+        Bullet,
+        Missile
     } type;
 };
 
@@ -61,6 +62,7 @@ struct PlayerComponent {
     glm::vec3 lastStreakColor = glm::vec3(0, 0, 1);
     glm::vec3 nextStreakColor = glm::vec3(0, 0, 1);
     float streakColorElapsed = 1;
+    float timeSinceMissile = 0;
 };
 
 enum class EntityType {

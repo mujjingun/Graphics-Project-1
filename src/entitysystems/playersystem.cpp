@@ -21,11 +21,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     PosComponent& pos = player.get<PosComponent>();
     HealthComponent& health = player.get<HealthComponent>();
 
-    comp.timeSinceBullet += deltaTime;
     comp.timeSinceHit += deltaTime;
-    comp.timeSinceDead += deltaTime;
-    comp.timeSinceStreak += deltaTime;
-    comp.streakColorElapsed += deltaTime;
 
     // player dead
     if (!comp.isDead && health.health <= 0) {
@@ -59,15 +55,19 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     }
 
     if (comp.isDead) {
+        comp.timeSinceDead += deltaTime;
         return;
     }
+
+    // shoot bullets
+    comp.timeSinceBullet += deltaTime;
 
     float bulletInterval = 0.05f;
     while (comp.timeSinceBullet > bulletInterval) {
         comp.timeSinceBullet -= bulletInterval;
 
         ProjectileComponent projectile;
-        projectile.type = ProjectileComponent::Type::Player;
+        projectile.type = ProjectileComponent::Type::Bullet;
 
         VelComponent vel;
         vel.vel = { 0, 3.0f };
@@ -77,6 +77,37 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
         engine.addEntity(Entity({ projectile, bulletPos, vel }));
     }
+
+    // shoot missiles
+    if (input.isKeyPressed(' ')) {
+        comp.timeSinceMissile += deltaTime;
+
+        float missileInterval = 0.5f;
+        while (comp.timeSinceMissile > missileInterval) {
+            comp.timeSinceMissile -= missileInterval;
+
+            ProjectileComponent projectile;
+            projectile.type = ProjectileComponent::Type::Missile;
+
+            VelComponent vel;
+            vel.vel = { 0, 2.0f };
+
+            PosComponent bulletPos;
+            bulletPos.pos = pos.pos + glm::vec2(0.09f, -0.05f) + vel.vel * comp.timeSinceBullet;
+
+            engine.addEntity(Entity({ projectile, bulletPos, vel }));
+
+            bulletPos.pos = pos.pos + glm::vec2(-0.09f, -0.05f) + vel.vel * comp.timeSinceBullet;
+
+            engine.addEntity(Entity({ projectile, bulletPos, vel }));
+        }
+    } else {
+        comp.timeSinceMissile = 0.5f;
+    }
+
+    // leave streaks
+    comp.timeSinceStreak += deltaTime;
+    comp.streakColorElapsed += deltaTime;
 
     float streakInterval = 0.005f;
     while (comp.timeSinceStreak > streakInterval) {
@@ -103,7 +134,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     if (comp.streakColorElapsed >= 1) {
         comp.streakColorElapsed -= 1;
 
-        std::uniform_real_distribution<float> colorDist(0, 1);
+        std::uniform_real_distribution<float> colorDist(0, 0.7f);
 
         comp.lastStreakColor = comp.nextStreakColor;
         comp.nextStreakColor = glm::vec3(colorDist(engine.rand()), colorDist(engine.rand()), 1);

@@ -42,7 +42,7 @@ void RenderSystem::update(ECSEngine& engine, float)
     PlayerComponent const& playerComp = player.get<PlayerComponent>();
     if (playerComp.timeSinceHit < 0.5f) {
         float jitter = glm::sin(playerComp.timeSinceHit * 80);
-        jitter *= (0.5f - playerComp.timeSinceHit) * 0.1f;
+        jitter *= (0.5f - playerComp.timeSinceHit) * 0.05f;
         viewMat = viewMat * glm::translate(glm::mat4(1), glm::vec3(jitter));
     }
 
@@ -57,8 +57,17 @@ void RenderSystem::update(ECSEngine& engine, float)
 
         PointAttrib attrib;
         attrib.pos = pos.pos;
-        attrib.color = { 5, 5, 5 };
-        attrib.size = 6;
+
+        switch (proj.get<ProjectileComponent>().type) {
+        case ProjectileComponent::Type::Bullet:
+            attrib.color = { 5, 5, 5 };
+            attrib.size = 6;
+            break;
+        case ProjectileComponent::Type::Missile:
+            attrib.color = { 0, 5, 0 };
+            attrib.size = 12;
+            break;
+        }
 
         if (attribs.size() < max_particles) {
             attribs.push_back(attrib);

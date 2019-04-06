@@ -16,8 +16,7 @@ void ProjectileSystem::update(ECSEngine& engine, float)
 
     engine.removeEntities<ProjectileComponent>([&](Entity& ent) {
         glm::vec2 pos = ent.get<PosComponent>().pos;
-        bool isOutOfScreen = pos.y < -scene.aspectRatio || pos.y > scene.aspectRatio
-            || pos.x < -1 || pos.x > 1;
+        bool isOutOfScreen = pos.y < -scene.aspectRatio || pos.y > scene.aspectRatio;
         return isOutOfScreen;
     });
 
@@ -40,6 +39,9 @@ void ProjectileSystem::update(ECSEngine& engine, float)
         }
     }
 
-    engine.removeEntities<ProjectileComponent, CollisionComponent>();
+    engine.removeEntities<ProjectileComponent, CollisionComponent>(
+        [](Entity& ent) {
+            return ent.get<ProjectileComponent>().type == ProjectileComponent::Type::Bullet;
+        });
 }
 }
