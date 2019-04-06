@@ -1,7 +1,7 @@
 #ifndef SCENESYSTEM_H
 #define SCENESYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 
 namespace ou {
 

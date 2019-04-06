@@ -1,7 +1,7 @@
 #ifndef SHRAPNELSYSTEM_H
 #define SHRAPNELSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 
 namespace ou {
 

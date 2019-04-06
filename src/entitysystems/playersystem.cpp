@@ -1,9 +1,8 @@
 #include "playersystem.h"
 #include "components.h"
-#include "ecsengine.h"
+#include "ecs/ecsengine.h"
 
 #include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <iostream>
 
 namespace ou {

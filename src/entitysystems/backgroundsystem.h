@@ -1,7 +1,7 @@
 #ifndef BACKGROUNDSYSTEM_H
 #define BACKGROUNDSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 #include <random>
 
 namespace ou {

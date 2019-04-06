@@ -7,11 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "framebuffer.h"
-#include "renderbuffer.h"
-#include "shader.h"
-#include "texture.h"
-#include "vertexarray.h"
+#include "graphics/framebuffer.h"
+#include "graphics/renderbuffer.h"
+#include "graphics/shader.h"
+#include "graphics/texture.h"
+#include "graphics/vertexarray.h"
 
 namespace ou {
 

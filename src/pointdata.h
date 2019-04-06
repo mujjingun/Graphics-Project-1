@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
-#include "vertexarray.h"
-#include "vertexbuffer.h"
+#include "graphics/vertexarray.h"
+#include "graphics/vertexbuffer.h"
 
 namespace ou {
 

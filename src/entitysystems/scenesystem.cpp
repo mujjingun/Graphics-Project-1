@@ -1,6 +1,6 @@
 #include "scenesystem.h"
 #include "components.h"
-#include "ecsengine.h"
+#include "ecs/ecsengine.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

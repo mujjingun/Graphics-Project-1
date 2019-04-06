@@ -1,7 +1,7 @@
 #ifndef POINTSHADER_H
 #define POINTSHADER_H
 
-#include "shader.h"
+#include "graphics/shader.h"
 
 namespace ou {
 

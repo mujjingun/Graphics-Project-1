@@ -1,7 +1,7 @@
 #ifndef PROJECTILESYSTEM_H
 #define PROJECTILESYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 
 namespace ou {
 

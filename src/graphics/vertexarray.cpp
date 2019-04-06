@@ -43,6 +43,11 @@ VertexArray::BufferBinding VertexArray::getBinding(GLuint bindingindex)
     return BufferBinding(this, bindingindex);
 }
 
+void VertexArray::bindIndexBuffer(const VertexBuffer &buf)
+{
+    glVertexArrayElementBuffer(m_id, buf.id());
+}
+
 void VertexArray::use() const
 {
     glBindVertexArray(m_id);

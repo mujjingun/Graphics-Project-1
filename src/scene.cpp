@@ -1,18 +1,19 @@
 #include "scene.h"
 
 #include "components.h"
-#include "ecsengine.h"
-#include "framebuffer.h"
+#include "ecs/ecsengine.h"
+
+#include "graphics/framebuffer.h"
 
 // entity systems
-#include "backgroundsystem.h"
-#include "enemysystem.h"
-#include "physicssystem.h"
-#include "playersystem.h"
-#include "projectilesystem.h"
-#include "rendersystem.h"
-#include "scenesystem.h"
-#include "shrapnelsystem.h"
+#include "entitysystems/backgroundsystem.h"
+#include "entitysystems/enemysystem.h"
+#include "entitysystems/physicssystem.h"
+#include "entitysystems/playersystem.h"
+#include "entitysystems/projectilesystem.h"
+#include "entitysystems/rendersystem.h"
+#include "entitysystems/scenesystem.h"
+#include "entitysystems/shrapnelsystem.h"
 
 #include <GL/glew.h>
 

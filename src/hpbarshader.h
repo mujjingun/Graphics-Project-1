@@ -1,7 +1,7 @@
 #ifndef HPBARSHADER_H
 #define HPBARSHADER_H
 
-#include "shader.h"
+#include "graphics/shader.h"
 
 namespace ou {
 

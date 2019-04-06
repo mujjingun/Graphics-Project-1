@@ -1,7 +1,7 @@
 #ifndef PLAYERSYSTEM_H
 #define PLAYERSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 #include <random>
 
 namespace ou {

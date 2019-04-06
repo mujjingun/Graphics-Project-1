@@ -1,7 +1,7 @@
 #include "shrapnelsystem.h"
 #include "components.h"
-#include "ecsengine.h"
-#include "entity.h"
+#include "ecs/ecsengine.h"
+#include "ecs/entity.h"
 
 namespace ou {
 

@@ -1,7 +1,7 @@
 #ifndef RENDERSYSTEM_H
 #define RENDERSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 #include "pointdata.h"
 #include "hpbar.h"
 

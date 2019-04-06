@@ -1,7 +1,7 @@
 #ifndef ENEMYSYSTEM_H
 #define ENEMYSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 #include <random>
 
 namespace ou {

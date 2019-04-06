@@ -1,6 +1,6 @@
 #include "physicssystem.h"
 #include "components.h"
-#include "ecsengine.h"
+#include "ecs/ecsengine.h"
 
 namespace ou {
 

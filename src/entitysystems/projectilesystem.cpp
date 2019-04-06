@@ -1,6 +1,6 @@
 #include "projectilesystem.h"
 #include "components.h"
-#include "ecsengine.h"
+#include "ecs/ecsengine.h"
 
 #include <iostream>
 

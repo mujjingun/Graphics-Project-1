@@ -1,7 +1,7 @@
 #ifndef SIMPLESHADER_H
 #define SIMPLESHADER_H
 
-#include "shader.h"
+#include "graphics/shader.h"
 
 namespace ou {
 

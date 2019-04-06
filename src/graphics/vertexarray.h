@@ -51,6 +51,8 @@ public:
     Attribute enableVertexAttrib(GLuint attribindex);
     BufferBinding getBinding(GLuint bindingindex);
 
+    void bindIndexBuffer(const VertexBuffer& buf);
+
     void use() const;
 
     GLuint id() const;

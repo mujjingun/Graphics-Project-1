@@ -1,7 +1,7 @@
 #ifndef PHYSICSSYSTEM_H
 #define PHYSICSSYSTEM_H
 
-#include "entitysystem.h"
+#include "ecs/entitysystem.h"
 
 namespace ou {
 
