@@ -225,12 +225,16 @@ Scene::Scene()
     playerCollision.radius = 0.1f;
 
     PosComponent playerPos;
-    playerPos.pos = { 0, -scene.aspectRatio };
+    playerPos.pos = { 0, -1 };
+
+    ApparentVelComponent playerAppVel;
+    playerAppVel.lastPos = playerPos.pos;
+    playerAppVel.vel = {};
 
     HealthComponent playerHealth;
     playerHealth.health = 100;
     playerHealth.maxHealth = 100;
-    m_s->engine.addEntity(Entity({ player, playerPos, playerHealth, playerCollision }));
+    m_s->engine.addEntity(Entity({ player, playerPos, playerAppVel, playerHealth, playerCollision }));
 
     InputComponent input;
     m_s->engine.addEntity(Entity({ input }));

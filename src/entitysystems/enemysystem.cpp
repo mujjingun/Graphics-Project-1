@@ -100,7 +100,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 collide.radius = 0.08f;
                 enemy.shrapnelCount = 5;
                 health.maxHealth = 1;
-                vel.vel.x = 0.5f;
+                vel.vel.x = 0.9f;
                 vel.vel.y = -0.8f;
                 break;
             default:

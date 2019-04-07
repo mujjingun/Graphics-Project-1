@@ -14,6 +14,12 @@ void PhysicsSystem::update(ECSEngine& engine, float deltaTime)
         ent.get<PosComponent>().pos += deltaTime * ent.get<VelComponent>().vel;
     }
 
+    for (Entity& ent : engine.iterate<PosComponent, ApparentVelComponent>()) {
+        ApparentVelComponent& vel = ent.get<ApparentVelComponent>();
+        vel.vel = (ent.get<PosComponent>().pos - vel.lastPos) / deltaTime;
+        vel.lastPos = ent.get<PosComponent>().pos;
+    }
+
     for (Entity& ent : engine.iterate<AngleComponent, AngleSpeedComponent>()) {
         ent.get<AngleComponent>().angle += deltaTime * ent.get<AngleSpeedComponent>().angleSpeed;
     }

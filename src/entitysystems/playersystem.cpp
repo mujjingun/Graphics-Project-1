@@ -71,6 +71,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
         VelComponent vel;
         vel.vel = { 0, 3.0f };
+        vel.vel.x += player.get<ApparentVelComponent>().vel.x;
 
         PosComponent bulletPos;
         bulletPos.pos = pos.pos + glm::vec2(0, 0.1f) + vel.vel * comp.timeSinceBullet;
@@ -91,6 +92,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
             VelComponent vel;
             vel.vel = { 0, 2.0f };
+            vel.vel.x += player.get<ApparentVelComponent>().vel.x;
 
             PosComponent bulletPos;
             bulletPos.pos = pos.pos + glm::vec2(0.09f, -0.05f) + vel.vel * comp.timeSinceBullet;
@@ -171,5 +173,11 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     float smoothing = 1 - glm::exp(-deltaTime * 15);
     glm::vec2 smoothedDelta = (comp.dest - pos.pos) * smoothing;
     pos.pos += smoothedDelta;
+
+    // suicide
+    if (input.isKeyPressed('r')) {
+        health.health = 0;
+        comp.timeSinceHit = 0;
+    }
 }
 }

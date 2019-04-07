@@ -33,6 +33,11 @@ struct VelComponent {
     glm::vec2 vel;
 };
 
+struct ApparentVelComponent {
+    glm::vec2 lastPos;
+    glm::vec2 vel;
+};
+
 struct StarComponent {
     int size;
     glm::vec3 color;

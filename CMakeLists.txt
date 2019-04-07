@@ -64,18 +64,3 @@ set(SHADER_FILES
 foreach(SHADER_FILE ${SHADER_FILES})
     configure_file(${SHADER_FILE} ${SHADER_FILE} COPYONLY)
 endforeach()
-
-# Testing
-#enable_testing()
-#find_package(GTest REQUIRED)
-#
-#add_executable(runUnitTests
-#    tests/unittests.cpp
-#)
-#
-#target_link_libraries(runUnitTests gtest gtest_main)
-#
-#add_test(
-#    NAME runUnitTests
-#    COMMAND runUnitTests
-#)
