@@ -20,6 +20,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     PlayerComponent& comp = player.get<PlayerComponent>();
     PosComponent& pos = player.get<PosComponent>();
     HealthComponent& health = player.get<HealthComponent>();
+    ApparentVelComponent& appVel = player.get<ApparentVelComponent>();
 
     comp.timeSinceHit += deltaTime;
 
@@ -111,7 +112,9 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     comp.timeSinceStreak += deltaTime;
     comp.streakColorElapsed += deltaTime;
 
-    float streakInterval = 0.005f;
+    float timeSinceStreakOrig = comp.timeSinceStreak;
+
+    float streakInterval = 0.002f;
     while (comp.timeSinceStreak > streakInterval) {
         comp.timeSinceStreak -= streakInterval;
 
@@ -125,11 +128,13 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
         PosComponent streakPos;
         streakPos.pos = pos.pos + glm::vec2(0.05f, -0.08f) + vel.vel * comp.timeSinceStreak;
         streakPos.pos.y -= offset;
+        streakPos.pos += appVel.vel * (timeSinceStreakOrig - comp.timeSinceStreak);
 
         engine.addEntity(Entity({ streak, streakPos, vel }));
 
         streakPos.pos = pos.pos + glm::vec2(-0.05f, -0.08f) + vel.vel * comp.timeSinceStreak;
         streakPos.pos.y -= offset;
+        streakPos.pos += appVel.vel * (timeSinceStreakOrig - comp.timeSinceStreak);
         engine.addEntity(Entity({ streak, streakPos, vel }));
     }
 

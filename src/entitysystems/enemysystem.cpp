@@ -15,7 +15,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     SceneComponent& scene = engine.getOne<SceneComponent>();
     Entity& player = engine.getOneEnt<PlayerComponent>();
 
-    std::uniform_real_distribution<> posDist(-1, 1);
+    std::uniform_real_distribution<float> posDist(-1, 1);
     std::discrete_distribution<> typeDist({ 2, 1, 2, 1, 2 });
     std::discrete_distribution<> cntDist({ 0, 3, 4, 3, 2, 1 });
     EntityType types[] = {
@@ -46,11 +46,11 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         for (int i = 0; i < cnt; ++i) {
             float x;
             if (cnt == 1) {
-                x = float(posDist(engine.rand())) * 0.5f;
+                x = posDist(engine.rand()) * 0.5f;
             } else {
-                x = 2.f / (cnt - 1) * (float(posDist(engine.rand())) * 0.2f + 1.f) * i - 1.f;
+                x = 2.f / (cnt - 1) * (posDist(engine.rand()) * 0.2f + 1.f) * i - 1.f;
             }
-            x += float(posDist(engine.rand())) * 0.1f;
+            x += posDist(engine.rand()) * 0.1f;
             x = glm::clamp(x, -1.f, 1.f);
             float fastness = scene.elapsedTime * 0.01f;
 
@@ -79,7 +79,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 collide.radius = 0.10f;
                 enemy.shrapnelCount = 10;
                 health.maxHealth = 5;
-                vel.vel.x = 0.5f;
+                vel.vel.x = 0.5f * glm::sign(posDist(engine.rand()));
                 vel.vel.y = -0.5f;
                 break;
             case EntityType::COCKTAIL:
@@ -140,7 +140,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
             ent.removeComponent<CollisionComponent>();
             ent.get<EnemyComponent>().timeSinceHit = 0;
             ent.get<HealthComponent>().health -= 1;
-            ent.get<PosComponent>().pos.y += 0.02f;
+            ent.get<PosComponent>().pos.y += 0.05f;
         }
 
         ent.get<EnemyComponent>().timeSinceHit += deltaTime;

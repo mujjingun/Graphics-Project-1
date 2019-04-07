@@ -96,7 +96,7 @@ void RenderSystem::update(ECSEngine& engine, float)
         PointAttrib attrib;
         attrib.pos = pos.pos;
         attrib.color = ent.get<StreakComponent>().color;
-        attrib.size = 8;
+        attrib.size = 5;
 
         if (attribs.size() < max_particles) {
             attribs.push_back(attrib);
