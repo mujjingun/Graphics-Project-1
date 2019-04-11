@@ -83,7 +83,7 @@ void RenderSystem::update(ECSEngine& engine, float)
         attrib.pos = pos.pos;
         attrib.pos -= player.get<PosComponent>().pos * float(star.size) * 0.1f;
         attrib.color = star.color;
-        attrib.size = star.size;
+        attrib.size = float(star.size);
 
         if (attribs.size() < max_particles) {
             attribs.push_back(attrib);

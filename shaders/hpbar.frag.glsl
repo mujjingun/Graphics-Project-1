@@ -3,7 +3,7 @@
 layout(location = 0) uniform mat4 u_ModelViewProjectionMatrix;
 layout(location = 1) uniform float u_hpValue;
 
-in vec4 v_pos;
+in vec2 v_pos;
 
 layout(location = 0) out vec4 final_color;
 

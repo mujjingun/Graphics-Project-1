@@ -28,6 +28,7 @@ VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
 {
     glDeleteBuffers(1, &m_id);
     m_id = std::exchange(other.m_id, 0);
+	return *this;
 }
 
 void VertexBuffer::reserve(GLsizeiptr size, GLenum usage)

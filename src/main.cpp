@@ -95,7 +95,7 @@ public:
         scene->reshapeWindow(width, height);
     }
 
-    static void openglDebugCallback(GLenum source, GLenum type, GLenum id, GLenum severity,
+    static void GLAPIENTRY openglDebugCallback(GLenum source, GLenum type, GLenum id, GLenum severity,
         GLsizei length, const GLchar* message, const void* userParam)
     {
         const char* type_str;

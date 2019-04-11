@@ -31,7 +31,6 @@ struct SceneStates {
 
     FrameBuffer hdrFrameBuffer;
     Texture hdrColorTexture;
-    RenderBuffer hdrDepthRenderBuffer;
     VertexArray hdrVao;
 
     std::chrono::system_clock::time_point lastFrameTime;
@@ -42,6 +41,7 @@ struct SceneStates {
 
 glm::dvec2 Scene::mouseDelta() const
 {
+	return {};
 }
 
 void Scene::mouseClick()
@@ -88,10 +88,6 @@ void Scene::reshapeWindow(int width, int height)
     m_s->hdrColorTexture.allocateStorage2D(1, GL_RGBA16F, width, height);
     m_s->hdrFrameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, m_s->hdrColorTexture);
 
-    m_s->hdrDepthRenderBuffer = RenderBuffer();
-    m_s->hdrDepthRenderBuffer.allocateStorage(GL_DEPTH24_STENCIL8, width, height);
-    m_s->hdrFrameBuffer.bindRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, m_s->hdrDepthRenderBuffer);
-
     if (!m_s->hdrFrameBuffer.isComplete()) {
         std::cerr << "Error building framebuffer\n";
         throw std::runtime_error("Framebuffer is not complete");
@@ -112,23 +108,18 @@ void Scene::render()
     FrameBuffer::defaultBuffer().clear(GL_COLOR, 0, clearColor);
     m_s->hdrFrameBuffer.clear(GL_COLOR, 0, clearColor);
 
-    float clearDepth[] = { 1 };
-    FrameBuffer::defaultBuffer().clear(GL_DEPTH, 0, clearDepth);
-    m_s->hdrFrameBuffer.clear(GL_DEPTH, 0, clearDepth);
-
     // Render stuff to framebuffer
     m_s->hdrFrameBuffer.use(GL_FRAMEBUFFER);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glEnable(GL_DEPTH_TEST);
-
+ 
     // render and update stuff
     m_s->engine.update(fDeltaTime);
 
     // apply HDR
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);
     glDisable(GL_BLEND);
-    //glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
 
     m_s->hdrVao.use();
     m_s->hdrShader.use();

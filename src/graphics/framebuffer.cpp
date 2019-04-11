@@ -39,6 +39,7 @@ FrameBuffer &FrameBuffer::operator=(FrameBuffer &&other) noexcept
 {
     glDeleteFramebuffers(1, &m_id);
     m_id = std::exchange(other.m_id, 0);
+	return *this;
 }
 
 FrameBuffer& FrameBuffer::defaultBuffer()
@@ -48,7 +49,12 @@ FrameBuffer& FrameBuffer::defaultBuffer()
 
 void FrameBuffer::clear(GLenum buffer, GLint drawbuffer, const GLfloat* value)
 {
-    glClearNamedFramebufferfv(m_id, buffer, drawbuffer, const_cast<GLfloat*>(value));
+	// Intel driver bug here, cannot use DSA
+	int original;
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &original);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_id);
+	glClearBufferfv(buffer, drawbuffer, const_cast<GLfloat*>(value));
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, original);
 }
 
 void FrameBuffer::use(GLenum target) const

@@ -11,7 +11,7 @@ void main()
     vec3 hdrColor = texture(screenTexture, vTexCoords).rgb;
 
     // exposure tone mapping
-    const float exposure = 1.0;
+    const float exposure = 1.5;
     vec3 toneMapped = 1.0 - exp(-hdrColor * exposure);
 
     // gamma correction
