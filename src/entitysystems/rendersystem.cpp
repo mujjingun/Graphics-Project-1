@@ -14,7 +14,7 @@
 namespace ou {
 
 namespace {
-    const int max_particles = 500;
+    const int max_particles = 700;
 }
 
 RenderSystem::RenderSystem()

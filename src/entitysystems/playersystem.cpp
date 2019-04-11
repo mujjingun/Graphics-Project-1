@@ -167,7 +167,7 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
     }
 
     // normalize speed
-    float moveSpeed = 2;
+    float moveSpeed = 2.0f;
     if (glm::length(moveDelta) > 0) {
         moveDelta = glm::normalize(moveDelta) * deltaTime * moveSpeed;
     }

@@ -37,59 +37,23 @@ struct SceneStates {
     std::chrono::system_clock::time_point lastFrameTime;
     std::chrono::system_clock::duration deltaTime;
 
-    glm::dvec2 mousePos;
-    glm::dvec2 realMousePos;
-
-    glm::dvec2 lastMousePos;
-    glm::dvec2 smoothedMouseDelta;
-    bool mousePosInvalidated = true;
-    bool captureMouse = false;
-    bool warpPointer = false;
-
     ECSEngine engine{};
 };
 
 glm::dvec2 Scene::mouseDelta() const
 {
-    return m_s->smoothedMouseDelta;
 }
 
 void Scene::mouseClick()
 {
-    if (!m_s->captureMouse) {
-        m_s->captureMouse = true;
-        glutSetCursor(GLUT_CURSOR_NONE);
-        m_s->lastMousePos = { 0, 0 };
-        m_s->mousePos = { 0, 0 };
-        m_s->warpPointer = true;
-    } else {
-        m_s->captureMouse = false;
-        glutSetCursor(GLUT_CURSOR_INHERIT);
-        m_s->mousePosInvalidated = true;
-    }
 }
 
-void Scene::mouseMove(int x, int y)
+void Scene::mouseMove(int, int)
 {
-    SceneComponent scene = m_s->engine.getOne<SceneComponent>();
-
-    if (m_s->captureMouse) {
-        glm::ivec2 delta(x - m_s->realMousePos.x, y - m_s->realMousePos.y);
-        glm::ivec2 center(x - scene.windowWidth / 2, y - scene.windowHeight / 2);
-        if (std::abs(center.x) > scene.windowWidth / 3 || std::abs(center.y) > scene.windowHeight / 3) {
-            m_s->warpPointer = true;
-        }
-        m_s->mousePos += delta;
-    } else {
-        m_s->mousePos = { x, y };
-    }
-
-    m_s->realMousePos = { x, y };
 }
 
 void Scene::mouseEnter()
 {
-    m_s->mousePosInvalidated = true;
 }
 
 void Scene::keyDown(unsigned char key)
@@ -170,26 +134,6 @@ void Scene::render()
     m_s->hdrShader.use();
     m_s->hdrColorTexture.use(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    // Update mouse cursor stuff
-    if (m_s->mousePosInvalidated) {
-        m_s->lastMousePos = m_s->mousePos;
-        m_s->smoothedMouseDelta = { 0, 0 };
-        m_s->mousePosInvalidated = false;
-    } else {
-        glm::dvec2 mouseDelta = m_s->mousePos - m_s->lastMousePos;
-
-        float smoothing = 1 - glm::exp(-fDeltaTime * 15);
-        m_s->smoothedMouseDelta = mouseDelta * double(smoothing);
-        m_s->lastMousePos += m_s->smoothedMouseDelta;
-    }
-
-    SceneComponent scene = m_s->engine.getOne<SceneComponent>();
-    if (m_s->captureMouse && m_s->warpPointer) {
-        glutWarpPointer(scene.windowWidth / 2, scene.windowHeight / 2);
-        m_s->realMousePos = { scene.windowWidth / 2, scene.windowHeight / 2 };
-        m_s->warpPointer = false;
-    }
 }
 
 Scene::Scene()
