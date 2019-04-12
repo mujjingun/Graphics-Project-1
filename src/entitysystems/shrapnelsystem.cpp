@@ -27,7 +27,7 @@ void ShrapnelSystem::update(ECSEngine& engine, float deltaTime)
             if (ent.get<ShrapnelComponent>().type != EntityType::PLAYER) {
                 if (ent.get<ShrapnelComponent>().type == EntityType::BALLOON) {
                     HealthComponent& health = player.get<HealthComponent>();
-                    health.health = std::min(health.maxHealth, health.health + 5);
+                    health.health = std::min(health.maxHealth, health.health + int(ent.get<ShrapnelComponent>().scale * 100));
                 } else {
                     player.get<HealthComponent>().health -= 1;
                     player.get<PlayerComponent>().timeSinceHit = 0;

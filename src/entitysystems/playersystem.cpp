@@ -114,14 +114,14 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
     float timeSinceStreakOrig = comp.timeSinceStreak;
 
-    float streakInterval = 0.002f;
+    float streakInterval = 0.05f;
     while (comp.timeSinceStreak > streakInterval) {
         comp.timeSinceStreak -= streakInterval;
 
         StreakComponent streak;
         streak.color = glm::mix(comp.lastStreakColor, comp.nextStreakColor, comp.streakColorElapsed);
 
-        VelComponent vel = { { 0, -3.0f } };
+        VelComponent vel = { { 0, -2.0f } };
 
         float offset = glm::pow(scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f, 2.0f);
 

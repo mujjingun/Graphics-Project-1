@@ -100,7 +100,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 collide.radius = 0.08f;
                 enemy.shrapnelCount = 5;
                 health.maxHealth = 1;
-                vel.vel.x = 0.9f;
+                vel.vel.x = 0.2f;
                 vel.vel.y = -0.8f;
                 break;
             default:
@@ -127,8 +127,13 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         PosComponent pos = ent.get<PosComponent>();
         if (pos.pos.y < -scene.aspectRatio - 0.2f) {
             if (player.get<HealthComponent>().health > 0) {
-                player.get<HealthComponent>().health -= 5;
-                player.get<PlayerComponent>().timeSinceHit = 0;
+				if (ent.get<EnemyComponent>().type == EntityType::BALLOON) {
+					player.get<HealthComponent>().health += 2;
+				}
+				else {
+					player.get<HealthComponent>().health -= 5;
+					player.get<PlayerComponent>().timeSinceHit = 0;
+				}
             }
             return true;
         }
@@ -150,8 +155,17 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
             vel.x = -vel.x;
         }
 
-        if (ent.get<EnemyComponent>().type == EntityType::SQUID
-            || ent.get<EnemyComponent>().type == EntityType::BALLOON) {
+		if (ent.get<EnemyComponent>().type == EntityType::BALLOON) {
+			glm::vec2& vel = ent.get<VelComponent>().vel;
+			if (pos.x < player.get<PosComponent>().pos.x) {
+				vel.x = glm::abs(vel.x);
+			}
+			else {
+				vel.x = -glm::abs(vel.x);
+			}
+		}
+
+        if (ent.get<EnemyComponent>().type == EntityType::SQUID) {
             glm::vec2& vel = ent.get<VelComponent>().vel;
             if (pos.x < player.get<PosComponent>().pos.x) {
                 vel.x = -glm::abs(vel.x);

@@ -29,8 +29,8 @@ namespace ou {
 struct SceneStates {
     Shader hdrShader{ "shaders/hdr.vert.glsl", "shaders/hdr.frag.glsl" };
 
-    FrameBuffer hdrFrameBuffer;
-    Texture hdrColorTexture;
+    FrameBuffer hdrFrameBuffer, hdrResolveFrameBuffer;
+    Texture hdrColorTexture, hdrResolveTexture;
     VertexArray hdrVao;
 
     std::chrono::system_clock::time_point lastFrameTime;
@@ -82,20 +82,29 @@ void Scene::reshapeWindow(int width, int height)
     // Build framebuffer
     m_s->hdrFrameBuffer = FrameBuffer();
 
-    m_s->hdrColorTexture = Texture(GL_TEXTURE_2D);
-    m_s->hdrColorTexture.setMinFilter(GL_NEAREST);
-    m_s->hdrColorTexture.setMagFilter(GL_NEAREST);
-    m_s->hdrColorTexture.allocateStorage2D(1, GL_RGBA16F, width, height);
+    m_s->hdrColorTexture = Texture(GL_TEXTURE_2D_MULTISAMPLE);
+    m_s->hdrColorTexture.allocateMultisample2D(4, GL_RGBA16F, width, height, false);
     m_s->hdrFrameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, m_s->hdrColorTexture);
 
     if (!m_s->hdrFrameBuffer.isComplete()) {
         std::cerr << "Error building framebuffer\n";
         throw std::runtime_error("Framebuffer is not complete");
     }
+
+	m_s->hdrResolveTexture = Texture(GL_TEXTURE_2D);
+	m_s->hdrResolveTexture.allocateStorage2D(1, GL_RGBA16F, width, height);
+	m_s->hdrResolveFrameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, m_s->hdrResolveTexture);
+
+	if (!m_s->hdrResolveFrameBuffer.isComplete()) {
+		std::cerr << "Error building hdr resolve framebuffer\n";
+		throw std::runtime_error("Framebuffer is not complete");
+	}
 }
 
 void Scene::render()
 {
+	SceneComponent& scene = m_s->engine.getOne<SceneComponent>();
+
     // Update time stuff
     auto now = std::chrono::system_clock::now();
     m_s->deltaTime = now - m_s->lastFrameTime;
@@ -117,13 +126,18 @@ void Scene::render()
     m_s->engine.update(fDeltaTime);
 
     // apply HDR
+	glBlitNamedFramebuffer(m_s->hdrFrameBuffer.id(), m_s->hdrResolveFrameBuffer.id(),
+		0, 0, scene.windowWidth, scene.windowHeight,
+		0, 0, scene.windowWidth, scene.windowHeight,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
     FrameBuffer::defaultBuffer().use(GL_FRAMEBUFFER);
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-
+	
     m_s->hdrVao.use();
     m_s->hdrShader.use();
-    m_s->hdrColorTexture.use(0);
+    m_s->hdrResolveTexture.useAsTexture(0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
