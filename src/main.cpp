@@ -170,6 +170,7 @@ int main(int argc, char* argv[])
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(600, 800);
     glutCreateWindow("Sogang CSE4170 20171634");
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -202,6 +203,8 @@ int main(int argc, char* argv[])
     }
 
     glutExit();
+
+	std::cout << "Exiting..." << std::endl;
 
     return 0;
 }

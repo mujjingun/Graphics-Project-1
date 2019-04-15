@@ -23,6 +23,8 @@ struct ProjectileComponent {
         Bullet,
         Missile
     } type;
+	float elapsedTime;
+	int count;
 };
 
 struct PosComponent {
@@ -86,6 +88,7 @@ struct EnemyComponent {
 };
 
 struct CollisionComponent {
+	ProjectileComponent::Type type;
 };
 
 struct CollidableComponent {

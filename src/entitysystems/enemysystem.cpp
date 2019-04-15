@@ -142,10 +142,17 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
 
     for (Entity& ent : engine.iterate<EnemyComponent>()) {
         if (ent.has<CollisionComponent>()) {
-            ent.removeComponent<CollisionComponent>();
             ent.get<EnemyComponent>().timeSinceHit = 0;
-            ent.get<HealthComponent>().health -= 1;
+			switch (ent.get<CollisionComponent>().type) {
+			case ProjectileComponent::Type::Bullet:
+				ent.get<HealthComponent>().health -= 1;
+				break;
+			case ProjectileComponent::Type::Missile:
+				ent.get<HealthComponent>().health -= 5;
+				break;
+			}
             ent.get<PosComponent>().pos.y += 0.05f;
+			ent.removeComponent<CollisionComponent>();
         }
 
         ent.get<EnemyComponent>().timeSinceHit += deltaTime;

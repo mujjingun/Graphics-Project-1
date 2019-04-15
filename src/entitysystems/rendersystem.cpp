@@ -26,9 +26,10 @@ void RenderSystem::update(ECSEngine& engine, float)
 {
     SceneComponent const& scene = engine.getOne<SceneComponent>();
     Entity const& player = engine.getOneEnt<PlayerComponent>();
+	InputComponent const& input = engine.getOne<InputComponent>();
 
     glm::mat4 projMat;
-    float realAspectRatio = scene.windowWidth / float(scene.windowHeight);
+    const float realAspectRatio = scene.windowWidth / float(scene.windowHeight);
     if (scene.windowWidth * scene.aspectRatio > scene.windowHeight) {
         projMat = glm::ortho(-scene.aspectRatio * realAspectRatio,
             scene.aspectRatio * realAspectRatio,
@@ -58,13 +59,15 @@ void RenderSystem::update(ECSEngine& engine, float)
         PointAttrib attrib;
         attrib.pos = pos.pos;
 
-        switch (proj.get<ProjectileComponent>().type) {
+		ProjectileComponent const& comp = proj.get<ProjectileComponent>();
+
+        switch (comp.type) {
         case ProjectileComponent::Type::Bullet:
             attrib.color = { 5, 5, 5 };
             attrib.size = 6;
             break;
         case ProjectileComponent::Type::Missile:
-            attrib.color = { 0, 5, 0 };
+            attrib.color = glm::mix(glm::vec3(4, 0, 0), glm::vec3(0, 5, 0), comp.count / 3.0f);
             attrib.size = 12;
             break;
         }
@@ -206,10 +209,20 @@ void RenderSystem::update(ECSEngine& engine, float)
         glm::vec2 pos = player.get<PosComponent>().pos;
         float offset = glm::pow(scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f, 2.0f);
         pos.y -= offset;
+
+		glm::mat4 skewMat(1.0);
+		if (input.isKeyPressed('d')) {
+			skewMat[0][1] = glm::tan(glm::radians(-10.0f));
+		}
+		if (input.isKeyPressed('a')) {
+			skewMat[0][1] = glm::tan(glm::radians(10.0f));
+		}
+
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
+			* skewMat
             * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
             * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
-
+		
         render(EntityType::PLAYER, viewProjMat * modelMat);
     }
 

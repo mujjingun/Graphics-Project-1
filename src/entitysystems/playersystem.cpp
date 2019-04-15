@@ -24,6 +24,21 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
     comp.timeSinceHit += deltaTime;
 
+	if (player.has<CollisionComponent>()) {
+		player.get<PlayerComponent>().timeSinceHit = 0;
+
+		switch (player.get<CollisionComponent>().type) {
+		case ProjectileComponent::Type::Bullet:
+			health.health -= 1;
+			break;
+		case ProjectileComponent::Type::Missile:
+			health.health -= 5;
+			break;
+		}
+
+		player.removeComponent<CollisionComponent>();
+	}
+
     // player dead
     if (!comp.isDead && health.health <= 0) {
         comp.isDead = true;
@@ -69,6 +84,8 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
         ProjectileComponent projectile;
         projectile.type = ProjectileComponent::Type::Bullet;
+		projectile.count = 3;
+		projectile.elapsedTime = 0;
 
         VelComponent vel;
         vel.vel = { 0, 3.0f };
@@ -90,10 +107,12 @@ void PlayerSystem::update(ECSEngine& engine, float deltaTime)
 
             ProjectileComponent projectile;
             projectile.type = ProjectileComponent::Type::Missile;
+			projectile.count = 3;
+			projectile.elapsedTime = 0;
 
             VelComponent vel;
-            vel.vel = { 0, 2.0f };
-            vel.vel.x += player.get<ApparentVelComponent>().vel.x;
+            vel.vel = { 0, 2.5f };
+            vel.vel += player.get<ApparentVelComponent>().vel;
 
             PosComponent bulletPos;
             bulletPos.pos = pos.pos + glm::vec2(0.09f, -0.05f) + vel.vel * comp.timeSinceBullet;
