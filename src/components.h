@@ -104,5 +104,8 @@ struct ShrapnelComponent {
 struct StreakComponent {
     glm::vec3 color;
 };
+
+struct GravityComponent {};
+
 }
 #endif // COMPONENTS_H

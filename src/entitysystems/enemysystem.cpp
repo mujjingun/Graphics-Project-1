@@ -235,7 +235,13 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 vel.vel = ent.get<VelComponent>().vel;
                 vel.vel += glm::vec2(glm::cos(velAngle), glm::sin(velAngle)) * float(3 + normalDist(engine.rand()));
 
-                shrapnels.push_back(Entity({ shrapnel, pos, vel, angle, angleSpeed }));
+				Entity ent({ shrapnel, pos, vel, angle, angleSpeed });
+				
+				if (shrapnel.type == EntityType::BALLOON) {
+					ent.addComponent(GravityComponent{});
+				}
+
+                shrapnels.push_back(std::move(ent));
             }
         }
         return isDead;

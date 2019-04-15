@@ -10,6 +10,14 @@ PhysicsSystem::PhysicsSystem()
 
 void PhysicsSystem::update(ECSEngine& engine, float deltaTime)
 {
+	Entity const& player = engine.getOneEnt<PlayerComponent>();
+	glm::vec2 playerPos = player.get<PosComponent>().pos;
+	for (Entity& ent : engine.iterate<PosComponent, VelComponent, GravityComponent>()) {
+		glm::vec2 diff = ent.get<PosComponent>().pos - playerPos;
+		float r = glm::length(diff);
+		ent.get<VelComponent>().vel -= diff / (r * r) * deltaTime * 5.0f;
+	}
+
     for (Entity& ent : engine.iterate<PosComponent, VelComponent>()) {
         ent.get<PosComponent>().pos += deltaTime * ent.get<VelComponent>().vel;
     }

@@ -14,6 +14,7 @@ ShrapnelSystem::ShrapnelSystem()
 void ShrapnelSystem::update(ECSEngine& engine, float deltaTime)
 {
     Entity& player = engine.getOneEnt<PlayerComponent>();
+	SceneComponent const& scene = engine.getOne<SceneComponent>();
 
     engine.removeEntities<ShrapnelComponent>([&](Entity& ent) {
         ent.get<ShrapnelComponent>().elapsedTime += deltaTime;
@@ -36,7 +37,7 @@ void ShrapnelSystem::update(ECSEngine& engine, float deltaTime)
             }
         }
 
-        return ent.get<ShrapnelComponent>().elapsedTime > 2;
+        return shrapnelPos.y < -scene.aspectRatio || ent.get<ShrapnelComponent>().elapsedTime > 4;
     });
 }
 }

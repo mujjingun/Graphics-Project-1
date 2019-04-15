@@ -23,6 +23,7 @@
 #include <iostream>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace ou {
 
@@ -113,9 +114,9 @@ void Scene::render()
     float fDeltaTime = std::chrono::duration<float>(m_s->deltaTime).count();
 
     // Clear screen & framebuffer
-    float clearColor[] = { 0, 0, 0, 0 };
-    FrameBuffer::defaultBuffer().clear(GL_COLOR, 0, clearColor);
-    m_s->hdrFrameBuffer.clear(GL_COLOR, 0, clearColor);
+    glm::vec4 clearColor = glm::mix(glm::vec4(0, 0, 0.002f, 0), glm::vec4(0.002f, 0, 0.002f, 0), scene.elapsedTime / 100);
+    FrameBuffer::defaultBuffer().clear(GL_COLOR, 0, glm::value_ptr(clearColor));
+    m_s->hdrFrameBuffer.clear(GL_COLOR, 0, glm::value_ptr(clearColor));
 
     // Render stuff to framebuffer
     m_s->hdrFrameBuffer.use(GL_FRAMEBUFFER);
