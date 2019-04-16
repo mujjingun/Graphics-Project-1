@@ -29,51 +29,6 @@ namespace {
         return indices;
     }
 
-    template <std::size_t N, Attribute (&Attr)[N], std::size_t... Sizes>
-    class ModelData {
-        VertexBuffer vbo, ebo;
-        VertexArray vao;
-        int count;
-
-        ModelData()
-        {
-            vbo.setData(Attr, GL_STATIC_DRAW);
-
-            auto indices = make_indices({ Sizes... });
-            ebo.setData(indices, GL_STATIC_DRAW);
-            vao.bindIndexBuffer(ebo);
-
-            count = int(indices.size());
-
-            auto vertexBinding = vao.getBinding(0);
-            vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
-
-            auto vertexAttr = vao.enableVertexAttrib(0);
-            vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
-            vertexAttr.setBinding(vertexBinding);
-
-            auto colorAttr = vao.enableVertexAttrib(1);
-            colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
-            colorAttr.setBinding(vertexBinding);
-        }
-
-    public:
-        static ModelData* self()
-        {
-            static ModelData sself;
-            return &sself;
-        }
-
-        void render(glm::mat4 mat)
-        {
-            SimpleShader::self()->setUniform(0, mat);
-
-            vao.use();
-            SimpleShader::self()->use();
-            glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
-        }
-    };
-
     glm::vec3 plane_color[] = {
         { 150 / 255.0f, 129 / 255.0f, 183 / 255.0f },
         { 245 / 255.0f, 211 / 255.0f, 0 / 255.0f },
@@ -128,7 +83,50 @@ namespace {
         { { 18.0, 20.0 }, plane_color[5] },
         { { 20.0, 20.0 }, plane_color[5] },
     };
-    using PlaneData = ModelData<32, plane_attributes, 6, 6, 5, 5, 5, 5>;
+
+	class PlaneData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		PlaneData()
+		{
+			vbo.setData(plane_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 6, 6, 5, 5, 5, 5 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static PlaneData* self()
+		{
+			static PlaneData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 house_color[] = {
         { 200 / 255.0f, 39 / 255.0f, 42 / 255.0f },
@@ -168,7 +166,50 @@ namespace {
         { { 8.0, -2.0 }, house_color[4] },
         { { 8.0, -6.0 }, house_color[4] },
     };
-    using HouseData = ModelData<19, house_attributes, 3, 4, 4, 4, 4>;
+
+	class HouseData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		HouseData()
+		{
+			vbo.setData(house_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 3, 4, 4, 4, 4 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static HouseData* self()
+		{
+			static HouseData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 car_color[7] = {
         { 0 / 255.0f, 149 / 255.0f, 159 / 255.0f },
@@ -223,7 +264,49 @@ namespace {
         { { 10.0, -8.0 }, car_color[6] },
         { { 10.0, -12.0 }, car_color[6] },
     };
-    using CarData = ModelData<28, car_attributes, 4, 4, 4, 4, 4, 4, 4>;
+	class CarData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		CarData()
+		{
+			vbo.setData(car_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 4, 4, 4, 4, 4, 4, 4 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static CarData* self()
+		{
+			static CarData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 cocktail_color[5] = {
         { 235 / 255.0f, 225 / 255.0f, 196 / 255.0f },
@@ -272,7 +355,49 @@ namespace {
         { { 16.0, 14.0 }, cocktail_color[4] },
         { { 14.0, 12.0 }, cocktail_color[4] },
     };
-    using CocktailData = ModelData<28, cocktail_attributes, 6, 6, 4, 4, 8>;
+	class CocktailData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		CocktailData()
+		{
+			vbo.setData(cocktail_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 6, 6, 4, 4, 8 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static CocktailData* self()
+		{
+			static CocktailData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 squid_color[5] = {
         { 215 / 255.0f, 167 / 255.0f, 0 / 255.0f },
@@ -324,7 +449,49 @@ namespace {
         { { 20, 8 }, squid_color[3] },
     };
 
-    using SquidData = ModelData<31, squid_attributes, 3, 5, 3, 3, 3, 3, 3, 4, 4>;
+	class SquidData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		SquidData()
+		{
+			vbo.setData(squid_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 3, 5, 3, 3, 3, 3, 3, 4, 4 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static SquidData* self()
+		{
+			static SquidData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 balloon_color[1] = {
         { 255 / 255.0f, 0 / 255.0f, 0 / 255.0f },
@@ -351,7 +518,50 @@ namespace {
         { { 10, 1 }, balloon_color[0] },
         { { 17, 0 }, balloon_color[0] },
     };
-    using BalloonData = ModelData<16, balloon_attributes, 13, 3>;
+
+	class BalloonData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		BalloonData()
+		{
+			vbo.setData(balloon_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 13, 3 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static BalloonData* self()
+		{
+			static BalloonData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 
     glm::vec3 cake_color[] = {
         { 255 / 255.0f, 0 / 255.0f, 0 / 255.0f },
@@ -388,7 +598,50 @@ namespace {
         { { 10.0, 1.0 }, cake_color[4] },
         { { 10.0, 0.0 }, cake_color[4] },
     };
-    using CakeData = ModelData<20, cake_attributes, 4, 4, 4, 4, 4>;
+
+	class CakeData {
+		VertexBuffer vbo, ebo;
+		VertexArray vao;
+		int count;
+
+		CakeData()
+		{
+			vbo.setData(cake_attributes, GL_STATIC_DRAW);
+
+			auto indices = make_indices({ 4, 4, 4, 4, 4 });
+			ebo.setData(indices, GL_STATIC_DRAW);
+			vao.bindIndexBuffer(ebo);
+
+			count = int(indices.size());
+
+			auto vertexBinding = vao.getBinding(0);
+			vertexBinding.bindVertexBuffer(vbo, 0, sizeof(Attribute));
+
+			auto vertexAttr = vao.enableVertexAttrib(0);
+			vertexAttr.setFormat(2, GL_FLOAT, GL_FALSE, offsetof(Attribute, pos));
+			vertexAttr.setBinding(vertexBinding);
+
+			auto colorAttr = vao.enableVertexAttrib(1);
+			colorAttr.setFormat(3, GL_FLOAT, GL_FALSE, offsetof(Attribute, color));
+			colorAttr.setBinding(vertexBinding);
+		}
+
+	public:
+		static CakeData* self()
+		{
+			static CakeData sself;
+			return &sself;
+		}
+
+		void render(glm::mat4 mat)
+		{
+			SimpleShader::self()->setUniform(0, mat);
+
+			vao.use();
+			SimpleShader::self()->use();
+			glDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_SHORT, nullptr);
+		}
+	};
 }
 }
 
