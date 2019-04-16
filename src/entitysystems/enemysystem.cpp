@@ -126,12 +126,13 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     engine.removeEntities<EnemyComponent>([&](Entity& ent) {
         PosComponent pos = ent.get<PosComponent>();
         if (pos.pos.y < -scene.aspectRatio - 0.2f) {
-            if (player.get<HealthComponent>().health > 0) {
+			HealthComponent &health = player.get<HealthComponent>();
+            if (health.health > 0) {
 				if (ent.get<EnemyComponent>().type == EntityType::BALLOON) {
-					player.get<HealthComponent>().health += 2;
+					health.health = std::min(health.maxHealth, health.health + 2);
 				}
 				else {
-					player.get<HealthComponent>().health -= 5;
+					health.health -= 5;
 					player.get<PlayerComponent>().timeSinceHit = 0;
 				}
             }
