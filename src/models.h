@@ -4,9 +4,9 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "simpleshader.h"
 #include "graphics/vertexarray.h"
 #include "graphics/vertexbuffer.h"
+#include "simpleshader.h"
 
 namespace ou {
 
@@ -352,6 +352,43 @@ namespace {
         { { 17, 0 }, balloon_color[0] },
     };
     using BalloonData = ModelData<16, balloon_attributes, 13, 3>;
+
+    glm::vec3 cake_color[] = {
+        { 255 / 255.0f, 0 / 255.0f, 0 / 255.0f },
+        { 255 / 255.0f, 204 / 255.0f, 0 / 255.0f },
+        { 255 / 255.0f, 102 / 255.0f, 255 / 255.0f },
+        { 255 / 255.0f, 102 / 255.0f, 255 / 255.0f },
+        { 102 / 255.0f, 51 / 255.0f, 0 / 255.0f }
+    };
+
+    Attribute cake_attributes[] = {
+        // cake_fire
+        { { -0.5, 14.0 }, cake_color[0] },
+        { { -0.5, 13.0 }, cake_color[0] },
+        { { 0.5, 13.0 }, cake_color[0] },
+        { { 0.5, 14.0 }, cake_color[0] },
+        // cake_candle
+        { { -1.0, 8.0 }, cake_color[1] },
+        { { -1.0, 13.0 }, cake_color[1] },
+        { { 1.0, 13.0 }, cake_color[1] },
+        { { 1.0, 8.0 }, cake_color[1] },
+        // cake_body
+        { { 8.0, 5.0 }, cake_color[2] },
+        { { -8.0, 5.0 }, cake_color[2] },
+        { { -8.0, 8.0 }, cake_color[2] },
+        { { 8.0, 8.0 }, cake_color[2] },
+        //  cake_bottom
+        { { -10.0, 1.0 }, cake_color[3] },
+        { { -10.0, 5.0 }, cake_color[3] },
+        { { 10.0, 5.0 }, cake_color[3] },
+        { { 10.0, 1.0 }, cake_color[3] },
+        // cake_decorate
+        { { -10.0, 0.0 }, cake_color[4] },
+        { { -10.0, 1.0 }, cake_color[4] },
+        { { 10.0, 1.0 }, cake_color[4] },
+        { { 10.0, 0.0 }, cake_color[4] },
+    };
+    using CakeData = ModelData<20, cake_attributes, 4, 4, 4, 4, 4>;
 }
 }
 

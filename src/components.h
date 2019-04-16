@@ -23,8 +23,8 @@ struct ProjectileComponent {
         Bullet,
         Missile
     } type;
-	float elapsedTime;
-	int count;
+    float elapsedTime;
+    int count;
 };
 
 struct PosComponent {
@@ -79,6 +79,7 @@ enum class EntityType {
     COCKTAIL,
     SQUID,
     BALLOON,
+    CAKE
 };
 
 struct EnemyComponent {
@@ -88,7 +89,7 @@ struct EnemyComponent {
 };
 
 struct CollisionComponent {
-	ProjectileComponent::Type type;
+    ProjectileComponent::Type type;
 };
 
 struct CollidableComponent {
@@ -105,7 +106,7 @@ struct StreakComponent {
     glm::vec3 color;
 };
 
-struct GravityComponent {};
-
+struct GravityComponent {
+};
 }
 #endif // COMPONENTS_H

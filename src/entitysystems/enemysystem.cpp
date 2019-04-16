@@ -16,7 +16,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
     Entity& player = engine.getOneEnt<PlayerComponent>();
 
     std::uniform_real_distribution<float> posDist(-1, 1);
-    std::discrete_distribution<> typeDist({ 2, 1, 2, 1, 2 });
+    std::discrete_distribution<> typeDist({ 2, 1, 2, 1, 2, 1 });
     std::discrete_distribution<> cntDist({ 0, 3, 4, 3, 2, 1 });
     EntityType types[] = {
         EntityType::CAR,
@@ -24,6 +24,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         EntityType::COCKTAIL,
         EntityType::SQUID,
         EntityType::BALLOON,
+        EntityType::CAKE
     };
 
     m_elapsed += deltaTime;
@@ -36,7 +37,7 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         EntityType type = types[typeDist(engine.rand())];
 
         m_nextEnemyTime = 1;
-        if (type == EntityType::SQUID) {
+        if (type == EntityType::SQUID || type == EntityType::CAKE) {
             cnt = 1;
             m_nextEnemyTime = 2;
         } else if (type == EntityType::HOUSE) {
@@ -103,6 +104,12 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
                 vel.vel.x = 0.2f;
                 vel.vel.y = -0.8f;
                 break;
+            case EntityType::CAKE:
+                collide.radius = 0.2f;
+                enemy.shrapnelCount = 10;
+                health.maxHealth = 15;
+                vel.vel.x = 0;
+                vel.vel.y = -0.8f;
             default:
                 break;
             }
@@ -127,13 +134,15 @@ void EnemySystem::update(ECSEngine& engine, float deltaTime)
         PosComponent pos = ent.get<PosComponent>();
         if (pos.pos.y < -scene.aspectRatio - 0.2f) {
             if (player.get<HealthComponent>().health > 0) {
-				if (ent.get<EnemyComponent>().type == EntityType::BALLOON) {
-					player.get<HealthComponent>().health += 2;
-				}
-				else {
-					player.get<HealthComponent>().health -= 5;
-					player.get<PlayerComponent>().timeSinceHit = 0;
-				}
+                switch(ent.get<EnemyComponent>().type) {
+                case EntityType::BALLOON:
+                case EntityType::CAKE:
+                    player.get<HealthComponent>().health += 2;
+                    break;
+                default:
+                    player.get<HealthComponent>().health -= 5;
+                    player.get<PlayerComponent>().timeSinceHit = 0;
+                }
             }
             return true;
         }

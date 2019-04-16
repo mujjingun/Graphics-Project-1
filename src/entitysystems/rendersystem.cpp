@@ -26,7 +26,7 @@ void RenderSystem::update(ECSEngine& engine, float)
 {
     SceneComponent const& scene = engine.getOne<SceneComponent>();
     Entity const& player = engine.getOneEnt<PlayerComponent>();
-	InputComponent const& input = engine.getOne<InputComponent>();
+    InputComponent const& input = engine.getOne<InputComponent>();
 
     glm::mat4 projMat;
     const float realAspectRatio = scene.windowWidth / float(scene.windowHeight);
@@ -59,7 +59,7 @@ void RenderSystem::update(ECSEngine& engine, float)
         PointAttrib attrib;
         attrib.pos = pos.pos;
 
-		ProjectileComponent const& comp = proj.get<ProjectileComponent>();
+        ProjectileComponent const& comp = proj.get<ProjectileComponent>();
 
         switch (comp.type) {
         case ProjectileComponent::Type::Bullet:
@@ -128,6 +128,8 @@ void RenderSystem::update(ECSEngine& engine, float)
         } else if (type == EntityType::BALLOON) {
             BalloonData::self()->render(mat * glm::translate(glm::mat4(1.0), glm::vec3(-1))
                 * glm::scale(glm::mat4(1.0), glm::vec3(1.f / 16)));
+        } else if (type == EntityType::CAKE) {
+            CakeData::self()->render(mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 14.0f)));
         } else if (type == EntityType::PLAYER) {
             PlaneData::self()->render(mat * glm::scale(glm::mat4(1.0f), glm::vec3(1 / 18.0f)));
         }
@@ -158,7 +160,7 @@ void RenderSystem::update(ECSEngine& engine, float)
         float angle = enemy.get<AngleComponent>().angle;
 
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0));
-        float scale;
+        float scale, rockAngle;
         switch (comp.type) {
         case EntityType::HOUSE:
             scale = glm::sin(scene.elapsedTime * 10) * 0.5f + 1.0f;
@@ -188,6 +190,12 @@ void RenderSystem::update(ECSEngine& engine, float)
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
         case EntityType::BALLOON:
+            rockAngle = glm::sin(scene.elapsedTime * 10) * 30.0f;
+            modelMat = modelMat
+                * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale))
+                * glm::rotate(glm::mat4(1.0), glm::radians(rockAngle), glm::vec3(0, 0, 1));
+            break;
+        case EntityType::CAKE:
             modelMat = modelMat
                 * glm::scale(glm::mat4(1.0), glm::vec3(collide.radius * damageScale));
             break;
@@ -210,19 +218,19 @@ void RenderSystem::update(ECSEngine& engine, float)
         float offset = glm::pow(scene.elapsedTime < 1 ? 1.0f - float(scene.elapsedTime) : 0.0f, 2.0f);
         pos.y -= offset;
 
-		glm::mat4 skewMat(1.0);
-		if (input.isKeyPressed('d')) {
-			skewMat[0][1] = glm::tan(glm::radians(-10.0f));
-		}
-		if (input.isKeyPressed('a')) {
-			skewMat[0][1] = glm::tan(glm::radians(10.0f));
-		}
+        glm::mat4 skewMat(1.0);
+        if (input.isKeyPressed('d')) {
+            skewMat[0][1] = glm::tan(glm::radians(-10.0f));
+        }
+        if (input.isKeyPressed('a')) {
+            skewMat[0][1] = glm::tan(glm::radians(10.0f));
+        }
 
         glm::mat4 modelMat = glm::translate(glm::mat4(1.0), glm::vec3(pos, 0.0f))
-			* skewMat
+            * skewMat
             * glm::scale(glm::mat4(1.0), glm::vec3(scaleFactor))
             * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0, 0, 1));
-		
+
         render(EntityType::PLAYER, viewProjMat * modelMat);
     }
 
