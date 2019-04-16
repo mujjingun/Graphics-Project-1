@@ -14,7 +14,7 @@ ShrapnelSystem::ShrapnelSystem()
 void ShrapnelSystem::update(ECSEngine& engine, float deltaTime)
 {
     Entity& player = engine.getOneEnt<PlayerComponent>();
-	SceneComponent const& scene = engine.getOne<SceneComponent>();
+    SceneComponent const& scene = engine.getOne<SceneComponent>();
 
     engine.removeEntities<ShrapnelComponent>([&](Entity& ent) {
         ent.get<ShrapnelComponent>().elapsedTime += deltaTime;
@@ -26,7 +26,8 @@ void ShrapnelSystem::update(ECSEngine& engine, float deltaTime)
 
         if (glm::distance(playerPos, shrapnelPos) < playerRadius) {
             if (ent.get<ShrapnelComponent>().type != EntityType::PLAYER) {
-                if (ent.get<ShrapnelComponent>().type == EntityType::BALLOON) {
+                if (ent.get<ShrapnelComponent>().type == EntityType::BALLOON
+                    || ent.get<ShrapnelComponent>().type == EntityType::CAKE) {
                     HealthComponent& health = player.get<HealthComponent>();
                     health.health = std::min(health.maxHealth, health.health + int(ent.get<ShrapnelComponent>().scale * 100));
                 } else {
